@@ -1,10 +1,13 @@
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
+local ContentProvider = game:GetService("ContentProvider")
 
 local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
 
---[[
+--[[ 
 	Custom keybind section.
 
 	Edit these entries to change the key, mode, and animation id.
@@ -14,7 +17,7 @@ local player = Players.LocalPlayer
 	- "press"  = plays once, then returns to idle when the animation ends
 	- "toggle" = press once to start, press again to stop and return to idle
 
-	For the Splits keybind (C), startTime and endTime define the ping‑pong range.
+	For the Splits keybind (C), startTime and endTime define the ping-pong range.
 ]]
 local keybindActions = {
 	{
@@ -41,128 +44,128 @@ local keybindActions = {
 		looped = true,
 		priority = Enum.AnimationPriority.Action,
 	},
-{
-	name = "LaidUpSide",
-	keyCode = Enum.KeyCode.T,
-	mode = "toggle",
-	animationId = "125317011031079",
-	looped = true,
-	priority = Enum.AnimationPriority.Action,
-},
-{
-	name = "SitPretty1",
-	keyCode = Enum.KeyCode.Y,
-	mode = "toggle",
-	animationId = "85961795938515",
-	looped = true,
-	priority = Enum.AnimationPriority.Action,
-},
-{
-	name = "SitPretty2",
-	keyCode = Enum.KeyCode.U,
-	mode = "toggle",
-	animationId = "113986788014462",
-	looped = true,
-	priority = Enum.AnimationPriority.Action,
-},
-{
-	name = "CuteDanceIdk",
-	keyCode = Enum.KeyCode.F,
-	mode = "toggle",
-	animationId = "131673340109237",
-	looped = true,
-	priority = Enum.AnimationPriority.Action,
-},
-{
-	name = "JiggleDance",
-	keyCode = Enum.KeyCode.G,
-	mode = "toggle",
-	animationId = "125763702777221",
-	looped = true,
-	priority = Enum.AnimationPriority.Action,
-},
-{
-	name = "VibingJiggle",
-	keyCode = Enum.KeyCode.H,
-	mode = "toggle",
-	animationId = "111799322743206",
-	looped = true,
-	priority = Enum.AnimationPriority.Action,
-},
-{
-	name = "StripClubDance",
-	keyCode = Enum.KeyCode.J,
-	mode = "toggle",
-	animationId = "94463184061457",
-	looped = true,
-	priority = Enum.AnimationPriority.Action,
-},
-{
-	name = "FeelinMyself",
-	keyCode = Enum.KeyCode.K,
-	mode = "toggle",
-	animationId = "101385394794634",
-	looped = true,
-	priority = Enum.AnimationPriority.Action,
-},
-{
-	name = "SitOnIt",
-	keyCode = Enum.KeyCode.Z,
-	mode = "toggle",
-	animationId = "120446020975705",
-	looped = true,
-	priority = Enum.AnimationPriority.Action,
-},
-{
-	name = "SitOnIt2",
-	keyCode = Enum.KeyCode.X,
-	mode = "toggle",
-	animationId = "103890015669349",
-	looped = true,
-	priority = Enum.AnimationPriority.Action,
-},
-{
-	name = "Splits",
-	keyCode = Enum.KeyCode.C,
-	mode = "toggle",
-	animationId = "118947009579831",
-	looped = true,
-	priority = Enum.AnimationPriority.Action,
-	startTime = 3.19,   -- ping‑pong start
-	endTime = 5.47,     -- ping‑pong end
-},
-{
-	name = "Bending",
-	keyCode = Enum.KeyCode.V,
-	mode = "toggle",
-	animationId = "74591149880936",
-	looped = true,
-	priority = Enum.AnimationPriority.Action,
-},
-{
-	name = "Anim_B",
-	keyCode = Enum.KeyCode.B,
-	mode = "toggle",
-	animationId = "120446020725705",
-	looped = true,
-	priority = Enum.AnimationPriority.Action,
-},
-{
-	name = "Anim_N",
-	keyCode = Enum.KeyCode.N,
-	mode = "toggle",
-	animationId = "109716540429732",
-	looped = true,
-	priority = Enum.AnimationPriority.Action,
-},
-{
-	name = "Anim_M",
-	keyCode = Enum.KeyCode.M,
-	mode = "toggle",
-	animationId = "140655897836448",
-	looped = true,
-	priority = Enum.AnimationPriority.Action,
-},
+	{
+		name = "LaidUpSide",
+		keyCode = Enum.KeyCode.T,
+		mode = "toggle",
+		animationId = "125317011031079",
+		looped = true,
+		priority = Enum.AnimationPriority.Action,
+	},
+	{
+		name = "SitPretty1",
+		keyCode = Enum.KeyCode.Y,
+		mode = "toggle",
+		animationId = "85961795938515",
+		looped = true,
+		priority = Enum.AnimationPriority.Action,
+	},
+	{
+		name = "SitPretty2",
+		keyCode = Enum.KeyCode.U,
+		mode = "toggle",
+		animationId = "113986788014462",
+		looped = true,
+		priority = Enum.AnimationPriority.Action,
+	},
+	{
+		name = "CuteDanceIdk",
+		keyCode = Enum.KeyCode.F,
+		mode = "toggle",
+		animationId = "131673340109237",
+		looped = true,
+		priority = Enum.AnimationPriority.Action,
+	},
+	{
+		name = "JiggleDance",
+		keyCode = Enum.KeyCode.G,
+		mode = "toggle",
+		animationId = "125763702777221",
+		looped = true,
+		priority = Enum.AnimationPriority.Action,
+	},
+	{
+		name = "VibingJiggle",
+		keyCode = Enum.KeyCode.H,
+		mode = "toggle",
+		animationId = "111799322743206",
+		looped = true,
+		priority = Enum.AnimationPriority.Action,
+	},
+	{
+		name = "StripClubDance",
+		keyCode = Enum.KeyCode.J,
+		mode = "toggle",
+		animationId = "94463184061457",
+		looped = true,
+		priority = Enum.AnimationPriority.Action,
+	},
+	{
+		name = "FeelinMyself",
+		keyCode = Enum.KeyCode.K,
+		mode = "toggle",
+		animationId = "101385394794634",
+		looped = true,
+		priority = Enum.AnimationPriority.Action,
+	},
+	{
+		name = "SitOnIt",
+		keyCode = Enum.KeyCode.Z,
+		mode = "toggle",
+		animationId = "120446020975705",
+		looped = true,
+		priority = Enum.AnimationPriority.Action,
+	},
+	{
+		name = "SitOnIt2",
+		keyCode = Enum.KeyCode.X,
+		mode = "toggle",
+		animationId = "103890015669349",
+		looped = true,
+		priority = Enum.AnimationPriority.Action,
+	},
+	{
+		name = "Splits",
+		keyCode = Enum.KeyCode.C,
+		mode = "toggle",
+		animationId = "118947009579831",
+		looped = true,
+		priority = Enum.AnimationPriority.Action,
+		startTime = 3.19, -- ping-pong start
+		endTime = 5.47, -- ping-pong end
+	},
+	{
+		name = "Bending",
+		keyCode = Enum.KeyCode.V,
+		mode = "toggle",
+		animationId = "74591149880936",
+		looped = true,
+		priority = Enum.AnimationPriority.Action,
+	},
+	{
+		name = "Anim_B",
+		keyCode = Enum.KeyCode.B,
+		mode = "toggle",
+		animationId = "120446020725705",
+		looped = true,
+		priority = Enum.AnimationPriority.Action,
+	},
+	{
+		name = "Anim_N",
+		keyCode = Enum.KeyCode.N,
+		mode = "toggle",
+		animationId = "109716540429732",
+		looped = true,
+		priority = Enum.AnimationPriority.Action,
+	},
+	{
+		name = "Anim_M",
+		keyCode = Enum.KeyCode.M,
+		mode = "toggle",
+		animationId = "140655897836448",
+		looped = true,
+		priority = Enum.AnimationPriority.Action,
+	},
 }
 
 local function normalizeAnimationId(animationId)
@@ -179,6 +182,464 @@ local function normalizeAnimationId(animationId)
 
 	return animationId
 end
+
+--[[ 
+	UI helpers:
+	- Right Alt toggles the emote/keybind list.
+	- The list is visible automatically when the script starts.
+	- The intro decal now preloads before appearing and plays with a stronger pop.
+]]
+
+local uiState = {
+	created = false,
+	listVisible = true,
+	introPlayed = false,
+	gui = nil,
+	listFrame = nil,
+	listContainer = nil,
+}
+
+local function keyCodeToText(keyCode)
+	if keyCode == Enum.KeyCode.RightAlt then
+		return "Right Alt"
+	end
+	return keyCode.Name
+end
+
+local function modeToText(mode)
+	if mode == "hold" then
+		return "Hold"
+	elseif mode == "press" then
+		return "Press"
+	elseif mode == "toggle" then
+		return "Toggle"
+	end
+	return tostring(mode or "Unknown")
+end
+
+local function setEmoteListVisible(visible)
+	uiState.listVisible = visible and true or false
+
+	if uiState.gui then
+		uiState.gui.Enabled = uiState.listVisible
+	end
+end
+
+local function toggleEmoteList()
+	if not uiState.created then
+		return
+	end
+	setEmoteListVisible(not uiState.listVisible)
+end
+
+local function populateEmoteList()
+	if not uiState.listContainer then
+		return
+	end
+
+	for _, child in ipairs(uiState.listContainer:GetChildren()) do
+		if child:IsA("Frame") then
+			child:Destroy()
+		end
+	end
+
+	for _, binding in ipairs(keybindActions) do
+		local row = Instance.new("Frame")
+		row.Name = (binding.name or "Action") .. "Row"
+		row.BackgroundTransparency = 1
+		row.Size = UDim2.new(1, -6, 0, 28)
+		row.Parent = uiState.listContainer
+
+		local nameLabel = Instance.new("TextLabel")
+		nameLabel.BackgroundTransparency = 1
+		nameLabel.Position = UDim2.new(0, 0, 0, 0)
+		nameLabel.Size = UDim2.new(0.58, 0, 1, 0)
+		nameLabel.Font = Enum.Font.Gotham
+		nameLabel.Text = tostring(binding.name or "CustomAction")
+		nameLabel.TextColor3 = Color3.fromRGB(245, 245, 245)
+		nameLabel.TextSize = 14
+		nameLabel.TextXAlignment = Enum.TextXAlignment.Left
+		nameLabel.Parent = row
+
+		local keyLabel = Instance.new("TextLabel")
+		keyLabel.BackgroundTransparency = 1
+		keyLabel.Position = UDim2.new(0.58, 0, 0, 0)
+		keyLabel.Size = UDim2.new(0.18, 0, 1, 0)
+		keyLabel.Font = Enum.Font.GothamSemibold
+		keyLabel.Text = keyCodeToText(binding.keyCode)
+		keyLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+		keyLabel.TextSize = 14
+		keyLabel.TextXAlignment = Enum.TextXAlignment.Right
+		keyLabel.Parent = row
+
+		local modeLabel = Instance.new("TextLabel")
+		modeLabel.BackgroundTransparency = 1
+		modeLabel.Position = UDim2.new(0.77, 0, 0, 0)
+		modeLabel.Size = UDim2.new(0.23, 0, 1, 0)
+		modeLabel.Font = Enum.Font.GothamSemibold
+		modeLabel.Text = modeToText(binding.mode)
+		modeLabel.TextColor3 = Color3.fromRGB(140, 210, 255)
+		modeLabel.TextSize = 14
+		modeLabel.TextXAlignment = Enum.TextXAlignment.Right
+		modeLabel.Parent = row
+	end
+end
+
+local function createEmoteOverlay()
+	if uiState.created then
+		return
+	end
+	uiState.created = true
+
+	local screenGui = Instance.new("ScreenGui")
+	screenGui.Name = "EmoteKeybindOverlay"
+	screenGui.IgnoreGuiInset = true
+	screenGui.ResetOnSpawn = false
+	screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+	screenGui.Enabled = false
+	screenGui.Parent = playerGui
+
+	local listFrame = Instance.new("Frame")
+	listFrame.Name = "KeybindList"
+	listFrame.AnchorPoint = Vector2.new(1, 0)
+	listFrame.Position = UDim2.new(1, -18, 0.18, 0)
+	listFrame.Size = UDim2.new(0, 320, 0, 380)
+	listFrame.BackgroundColor3 = Color3.fromRGB(18, 18, 18)
+	listFrame.BackgroundTransparency = 0.15
+	listFrame.BorderSizePixel = 0
+	listFrame.Parent = screenGui
+	uiState.listFrame = listFrame
+	uiState.gui = screenGui
+
+	local corner = Instance.new("UICorner")
+	corner.CornerRadius = UDim.new(0, 10)
+	corner.Parent = listFrame
+
+	local stroke = Instance.new("UIStroke")
+	stroke.Color = Color3.fromRGB(70, 70, 70)
+	stroke.Thickness = 1
+	stroke.Transparency = 0.2
+	stroke.Parent = listFrame
+
+	local title = Instance.new("TextLabel")
+	title.BackgroundTransparency = 1
+	title.Position = UDim2.new(0, 14, 0, 10)
+	title.Size = UDim2.new(1, -28, 0, 22)
+	title.Font = Enum.Font.GothamBold
+	title.Text = "Emotes / Keybinds"
+	title.TextColor3 = Color3.fromRGB(255, 255, 255)
+	title.TextSize = 18
+	title.TextXAlignment = Enum.TextXAlignment.Left
+	title.Parent = listFrame
+
+	local hint = Instance.new("TextLabel")
+	hint.BackgroundTransparency = 1
+	hint.Position = UDim2.new(0, 14, 0, 33)
+	hint.Size = UDim2.new(1, -28, 0, 18)
+	hint.Font = Enum.Font.Gotham
+	hint.Text = "Right Alt toggles this list"
+	hint.TextColor3 = Color3.fromRGB(180, 180, 180)
+	hint.TextSize = 12
+	hint.TextXAlignment = Enum.TextXAlignment.Left
+	hint.Parent = listFrame
+
+	local divider = Instance.new("Frame")
+	divider.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+	divider.BorderSizePixel = 0
+	divider.Position = UDim2.new(0, 14, 0, 56)
+	divider.Size = UDim2.new(1, -28, 0, 1)
+	divider.Parent = listFrame
+
+	local header = Instance.new("Frame")
+	header.BackgroundTransparency = 1
+	header.Position = UDim2.new(0, 14, 0, 62)
+	header.Size = UDim2.new(1, -28, 0, 18)
+	header.Parent = listFrame
+
+	local actionHeader = Instance.new("TextLabel")
+	actionHeader.BackgroundTransparency = 1
+	actionHeader.Size = UDim2.new(0.58, 0, 1, 0)
+	actionHeader.Font = Enum.Font.GothamSemibold
+	actionHeader.Text = "Action"
+	actionHeader.TextColor3 = Color3.fromRGB(150, 150, 150)
+	actionHeader.TextSize = 12
+	actionHeader.TextXAlignment = Enum.TextXAlignment.Left
+	actionHeader.Parent = header
+
+	local keyHeader = Instance.new("TextLabel")
+	keyHeader.BackgroundTransparency = 1
+	keyHeader.Position = UDim2.new(0.58, 0, 0, 0)
+	keyHeader.Size = UDim2.new(0.18, 0, 1, 0)
+	keyHeader.Font = Enum.Font.GothamSemibold
+	keyHeader.Text = "Key"
+	keyHeader.TextColor3 = Color3.fromRGB(150, 150, 150)
+	keyHeader.TextSize = 12
+	keyHeader.TextXAlignment = Enum.TextXAlignment.Right
+	keyHeader.Parent = header
+
+	local modeHeader = Instance.new("TextLabel")
+	modeHeader.BackgroundTransparency = 1
+	modeHeader.Position = UDim2.new(0.77, 0, 0, 0)
+	modeHeader.Size = UDim2.new(0.23, 0, 1, 0)
+	modeHeader.Font = Enum.Font.GothamSemibold
+	modeHeader.Text = "Mode"
+	modeHeader.TextColor3 = Color3.fromRGB(150, 150, 150)
+	modeHeader.TextSize = 12
+	modeHeader.TextXAlignment = Enum.TextXAlignment.Right
+	modeHeader.Parent = header
+
+	local scrollingFrame = Instance.new("ScrollingFrame")
+	scrollingFrame.Name = "List"
+	scrollingFrame.BackgroundTransparency = 1
+	scrollingFrame.BorderSizePixel = 0
+	scrollingFrame.Position = UDim2.new(0, 12, 0, 86)
+	scrollingFrame.Size = UDim2.new(1, -24, 1, -98)
+	scrollingFrame.ScrollBarThickness = 4
+	scrollingFrame.ScrollBarImageColor3 = Color3.fromRGB(130, 130, 130)
+	scrollingFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
+	scrollingFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+	scrollingFrame.Parent = listFrame
+
+	local layout = Instance.new("UIListLayout")
+	layout.Padding = UDim.new(0, 6)
+	layout.SortOrder = Enum.SortOrder.LayoutOrder
+	layout.Parent = scrollingFrame
+
+	uiState.listContainer = scrollingFrame
+	populateEmoteList()
+	setEmoteListVisible(true)
+end
+
+local function playIntro()
+	if uiState.introPlayed then
+		return
+	end
+	uiState.introPlayed = true
+
+	task.wait(3)
+
+	local introGui = Instance.new("ScreenGui")
+	introGui.Name = "IntroDecalGui"
+	introGui.IgnoreGuiInset = true
+	introGui.ResetOnSpawn = false
+	introGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+	introGui.DisplayOrder = 999
+	introGui.Enabled = false
+	introGui.Parent = playerGui
+
+	local backdrop = Instance.new("Frame")
+	backdrop.Name = "Backdrop"
+	backdrop.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+	backdrop.BackgroundTransparency = 1
+	backdrop.BorderSizePixel = 0
+	backdrop.Size = UDim2.fromScale(1, 1)
+	backdrop.Parent = introGui
+
+	local backdropFade = Instance.new("Frame")
+	backdropFade.Name = "BackdropFade"
+	backdropFade.BackgroundColor3 = Color3.fromRGB(6, 6, 10)
+	backdropFade.BackgroundTransparency = 1
+	backdropFade.BorderSizePixel = 0
+	backdropFade.Size = UDim2.fromScale(1, 1)
+	backdropFade.Parent = introGui
+
+	local holder = Instance.new("Frame")
+	holder.Name = "Holder"
+	holder.BackgroundTransparency = 1
+	holder.AnchorPoint = Vector2.new(0.5, 0.5)
+	holder.Position = UDim2.new(0.5, 0, 0.42, 0)
+	holder.Size = UDim2.new(0, 800, 0, 509) -- ~1221x776 ratio, larger overall
+	holder.Rotation = -8
+	holder.Parent = introGui
+
+	local holderScale = Instance.new("UIScale")
+	holderScale.Scale = 0.72
+	holderScale.Parent = holder
+
+	local glow = Instance.new("Frame")
+	glow.Name = "Glow"
+	glow.BackgroundColor3 = Color3.fromRGB(120, 170, 255)
+	glow.BackgroundTransparency = 1
+	glow.BorderSizePixel = 0
+	glow.AnchorPoint = Vector2.new(0.5, 0.5)
+	glow.Position = UDim2.new(0.5, 0, 0.5, 0)
+	glow.Size = UDim2.new(1, 84, 1, 84)
+	glow.ZIndex = 1
+	glow.Parent = holder
+
+	local glowCorner = Instance.new("UICorner")
+	glowCorner.CornerRadius = UDim.new(0, 26)
+	glowCorner.Parent = glow
+
+	local glowStroke = Instance.new("UIStroke")
+	glowStroke.Color = Color3.fromRGB(150, 205, 255)
+	glowStroke.Thickness = 4
+	glowStroke.Transparency = 1
+	glowStroke.Parent = glow
+
+	local shadow = Instance.new("ImageLabel")
+	shadow.Name = "Shadow"
+	shadow.BackgroundTransparency = 1
+	shadow.BorderSizePixel = 0
+	shadow.AnchorPoint = Vector2.new(0.5, 0.5)
+	shadow.Position = UDim2.new(0.5, 18, 0.5, 24)
+	shadow.Size = UDim2.new(1, 18, 1, 18)
+	shadow.Image = "rbxasset://textures/ui/GuiImagePlaceholder.png"
+	shadow.ImageColor3 = Color3.fromRGB(0, 0, 0)
+	shadow.ImageTransparency = 1
+	shadow.ScaleType = Enum.ScaleType.Fit
+	shadow.Parent = holder
+	shadow.ZIndex = 1
+
+	local image = Instance.new("ImageLabel")
+	image.Name = "Decal"
+	image.BackgroundTransparency = 1
+	image.BorderSizePixel = 0
+	image.AnchorPoint = Vector2.new(0.5, 0.5)
+	image.Position = UDim2.new(0.5, 0, 0.5, 0)
+	image.Size = UDim2.new(1, 0, 1, 0)
+	image.Image = "rbxassetid://99946360339614"
+	image.ImageTransparency = 1
+	image.ScaleType = Enum.ScaleType.Fit
+	image.ZIndex = 3
+	image.Parent = holder
+
+	local imageCorner = Instance.new("UICorner")
+	imageCorner.CornerRadius = UDim.new(0, 20)
+	imageCorner.Parent = image
+
+	local imageStroke = Instance.new("UIStroke")
+	imageStroke.Color = Color3.fromRGB(255, 255, 255)
+	imageStroke.Thickness = 2
+	imageStroke.Transparency = 1
+	imageStroke.Parent = image
+
+	local rim = Instance.new("Frame")
+	rim.Name = "Rim"
+	rim.BackgroundTransparency = 1
+	rim.BorderSizePixel = 0
+	rim.AnchorPoint = Vector2.new(0.5, 0.5)
+	rim.Position = UDim2.new(0.5, 0, 0.5, 0)
+	rim.Size = UDim2.new(1, 10, 1, 10)
+	rim.ZIndex = 2
+	rim.Parent = holder
+
+	local rimCorner = Instance.new("UICorner")
+	rimCorner.CornerRadius = UDim.new(0, 22)
+	rimCorner.Parent = rim
+
+	local rimStroke = Instance.new("UIStroke")
+	rimStroke.Color = Color3.fromRGB(255, 255, 255)
+	rimStroke.Thickness = 2
+	rimStroke.Transparency = 1
+	rimStroke.Parent = rim
+
+	local scan = Instance.new("Frame")
+	scan.Name = "Scan"
+	scan.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	scan.BackgroundTransparency = 1
+	scan.BorderSizePixel = 0
+	scan.Size = UDim2.new(1, 0, 0, 0)
+	scan.Position = UDim2.new(0, 0, 0.12, 0)
+	scan.ZIndex = 4
+	scan.Parent = image
+
+	local scanGradient = Instance.new("UIGradient")
+	scanGradient.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
+		ColorSequenceKeypoint.new(0.5, Color3.fromRGB(170, 220, 255)),
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 255, 255)),
+	})
+	scanGradient.Transparency = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 1),
+		NumberSequenceKeypoint.new(0.5, 0.35),
+		NumberSequenceKeypoint.new(1, 1),
+	})
+	scanGradient.Parent = scan
+
+	local preloadOk = pcall(function()
+		ContentProvider:PreloadAsync({ image })
+	end)
+
+	introGui.Enabled = true
+
+	local fadeInInfo = TweenInfo.new(0.22, Enum.EasingStyle.Sine, Enum.EasingDirection.Out)
+	local popInfo = TweenInfo.new(0.45, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+	local settleInfo = TweenInfo.new(0.16, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+
+	TweenService:Create(backdrop, fadeInInfo, { BackgroundTransparency = 0.38 }):Play()
+	TweenService:Create(backdropFade, fadeInInfo, { BackgroundTransparency = 0.72 }):Play()
+	TweenService:Create(holderScale, popInfo, { Scale = 1.08 }):Play()
+	TweenService:Create(holder, popInfo, {
+		Rotation = 0,
+		Position = UDim2.new(0.5, 0, 0.43, 0),
+	}):Play()
+
+	TweenService:Create(glow, fadeInInfo, { BackgroundTransparency = 0.88 }):Play()
+	TweenService:Create(glowStroke, fadeInInfo, { Transparency = 0.45 }):Play()
+	TweenService:Create(rimStroke, fadeInInfo, { Transparency = 0.55 }):Play()
+	TweenService:Create(imageStroke, fadeInInfo, { Transparency = 0.62 }):Play()
+	TweenService:Create(shadow, fadeInInfo, { ImageTransparency = 0.75 }):Play()
+
+	if preloadOk then
+		TweenService:Create(image, TweenInfo.new(0.24, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+			ImageTransparency = 0,
+		}):Play()
+	else
+		TweenService:Create(image, TweenInfo.new(0.35, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+			ImageTransparency = 0,
+		}):Play()
+	end
+
+	task.delay(0.3, function()
+		if not introGui.Parent then
+			return
+		end
+
+		TweenService:Create(holderScale, settleInfo, { Scale = 1 }):Play()
+		TweenService:Create(holder, settleInfo, { Rotation = 0 }):Play()
+		TweenService:Create(glow, settleInfo, { BackgroundTransparency = 1 }):Play()
+		TweenService:Create(glowStroke, settleInfo, { Transparency = 1 }):Play()
+	end)
+
+	task.delay(0.72, function()
+		if not introGui.Parent then
+			return
+		end
+
+		local fadeOutInfo = TweenInfo.new(0.42, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+		TweenService:Create(image, fadeOutInfo, { ImageTransparency = 1 }):Play()
+		TweenService:Create(shadow, fadeOutInfo, { ImageTransparency = 1 }):Play()
+		TweenService:Create(rimStroke, fadeOutInfo, { Transparency = 1 }):Play()
+		TweenService:Create(imageStroke, fadeOutInfo, { Transparency = 1 }):Play()
+		TweenService:Create(backdrop, fadeOutInfo, { BackgroundTransparency = 1 }):Play()
+		TweenService:Create(backdropFade, fadeOutInfo, { BackgroundTransparency = 1 }):Play()
+		TweenService:Create(holderScale, fadeOutInfo, { Scale = 1.03 }):Play()
+		TweenService:Create(holder, fadeOutInfo, {
+			Position = UDim2.new(0.5, 0, 0.415, 0),
+			Rotation = 2,
+		}):Play()
+
+		task.delay(0.46, function()
+			if introGui then
+				introGui:Destroy()
+			end
+		end)
+	end)
+end
+
+createEmoteOverlay()
+playIntro()
+
+UserInputService.InputBegan:Connect(function(inputObject, gameProcessed)
+	if gameProcessed then
+		return
+	end
+
+	if inputObject.KeyCode == Enum.KeyCode.RightAlt then
+		toggleEmoteList()
+	end
+end)
 
 local animNames = {
 	idle = {
@@ -329,7 +790,7 @@ local function startForCharacter(Character)
 	local nextIdleIndex = 1
 	local idleTrack = nil
 
-	-- Build custom keybind table with optional startTime/endTime for ping‑pong
+	-- Build custom keybind table with optional startTime/endTime for ping-pong
 	local function buildCustomBindings()
 		local bindings = {}
 		for _, binding in ipairs(keybindActions) do
@@ -661,7 +1122,7 @@ local function startForCharacter(Character)
 		action.isActive = false
 		action.ignoreStop = true
 
-		-- Clean up ping‑pong heartbeat if present
+		-- Clean up ping-pong heartbeat if present
 		if action.pingPongConnection then
 			action.pingPongConnection:Disconnect()
 			action.pingPongConnection = nil
@@ -730,7 +1191,7 @@ local function startForCharacter(Character)
 		currentAnimSpeed = 1.0
 		isIdle = false
 
-		-- Special ping‑pong handling for Splits (if startTime & endTime are provided)
+		-- Special ping-pong handling for Splits (if startTime & endTime are provided)
 		local isPingPong = action.startTime and action.endTime
 
 		if isPingPong then
