@@ -2,1896 +2,2028 @@ local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
-local ContentProvider = game:GetService("ContentProvider")
+local HttpService = game:GetService("HttpService")
 
 local player = Players.LocalPlayer
-local playerGui = player:WaitForChild("PlayerGui")
-
---[[ 
-	Custom keybind section.
-
-	Edit these entries to change the key, mode, and animation id.
-
-	Mode options:
-	- "hold"   = plays while the key is held, then returns to idle on release
-	- "press"  = plays once, then returns to idle when the animation ends
-	- "toggle" = press once to start, press again to stop and return to idle
-
-	For the Splits keybind (C), startTime and endTime define the ping-pong range.
-]]
-local keybindActions = {
-	{
-		name = "Wave",
-		keyCode = Enum.KeyCode.Q,
-		mode = "hold",
-		animationId = "86074172929360",
-		looped = true,
-		priority = Enum.AnimationPriority.Action,
-	},
-	{
-		name = "DropKick",
-		keyCode = Enum.KeyCode.E,
-		mode = "press",
-		animationId = "133566007754001",
-		looped = false,
-		priority = Enum.AnimationPriority.Action,
-	},
-	{
-		name = "LaidUpJiggle",
-		keyCode = Enum.KeyCode.R,
-		mode = "toggle",
-		animationId = "80914010483365",
-		looped = true,
-		priority = Enum.AnimationPriority.Action,
-	},
-	{
-		name = "LaidUpSide",
-		keyCode = Enum.KeyCode.T,
-		mode = "toggle",
-		animationId = "125317011031079",
-		looped = true,
-		priority = Enum.AnimationPriority.Action,
-	},
-	{
-		name = "SitPretty1",
-		keyCode = Enum.KeyCode.Y,
-		mode = "toggle",
-		animationId = "85961795938515",
-		looped = true,
-		priority = Enum.AnimationPriority.Action,
-	},
-	{
-		name = "SitPretty2",
-		keyCode = Enum.KeyCode.U,
-		mode = "toggle",
-		animationId = "113986788014462",
-		looped = true,
-		priority = Enum.AnimationPriority.Action,
-	},
-	{
-		name = "CuteDanceIdk",
-		keyCode = Enum.KeyCode.F,
-		mode = "toggle",
-		animationId = "131673340109237",
-		looped = true,
-		priority = Enum.AnimationPriority.Action,
-	},
-	{
-		name = "JiggleDance",
-		keyCode = Enum.KeyCode.G,
-		mode = "toggle",
-		animationId = "125763702777221",
-		looped = true,
-		priority = Enum.AnimationPriority.Action,
-	},
-	{
-		name = "VibingJiggle",
-		keyCode = Enum.KeyCode.H,
-		mode = "toggle",
-		animationId = "111799322743206",
-		looped = true,
-		priority = Enum.AnimationPriority.Action,
-	},
-	{
-		name = "StripClubDance",
-		keyCode = Enum.KeyCode.J,
-		mode = "toggle",
-		animationId = "94463184061457",
-		looped = true,
-		priority = Enum.AnimationPriority.Action,
-	},
-	{
-		name = "FeelinMyself",
-		keyCode = Enum.KeyCode.K,
-		mode = "toggle",
-		animationId = "101385394794634",
-		looped = true,
-		priority = Enum.AnimationPriority.Action,
-	},
-	{
-		name = "SitOnIt",
-		keyCode = Enum.KeyCode.Z,
-		mode = "toggle",
-		animationId = "120446020975705",
-		looped = true,
-		priority = Enum.AnimationPriority.Action,
-	},
-	{
-		name = "SitOnIt2",
-		keyCode = Enum.KeyCode.X,
-		mode = "toggle",
-		animationId = "103890015669349",
-		looped = true,
-		priority = Enum.AnimationPriority.Action,
-	},
-	{
-		name = "Splits",
-		keyCode = Enum.KeyCode.C,
-		mode = "toggle",
-		animationId = "118947009579831",
-		looped = true,
-		priority = Enum.AnimationPriority.Action,
-		startTime = 3.19, -- ping-pong start
-		endTime = 5.47, -- ping-pong end
-	},
-	{
-		name = "Bending",
-		keyCode = Enum.KeyCode.V,
-		mode = "toggle",
-		animationId = "74591149880936",
-		looped = true,
-		priority = Enum.AnimationPriority.Action,
-	},
-	{
-		name = "Anim_B",
-		keyCode = Enum.KeyCode.B,
-		mode = "toggle",
-		animationId = "120446020725705",
-		looped = true,
-		priority = Enum.AnimationPriority.Action,
-	},
-	{
-		name = "Anim_N",
-		keyCode = Enum.KeyCode.N,
-		mode = "toggle",
-		animationId = "109716540429732",
-		looped = true,
-		priority = Enum.AnimationPriority.Action,
-	},
-	{
-		name = "Anim_M",
-		keyCode = Enum.KeyCode.M,
-		mode = "toggle",
-		animationId = "140655897836448",
-		looped = true,
-		priority = Enum.AnimationPriority.Action,
-	},
-}
-
-local function normalizeAnimationId(animationId)
-	animationId = tostring(animationId)
-
-	if animationId:match("^rbxassetid://") then
-		return animationId
-	end
-
-	local numericId = animationId:match("(%d+)")
-	if numericId then
-		return "rbxassetid://" .. numericId
-	end
-
-	return animationId
-end
-
---[[ 
-	UI helpers:
-	- Right Alt toggles the emote/keybind list.
-	- The list is visible automatically when the script starts.
-	- The intro decal now preloads before appearing and plays with a stronger pop.
-]]
-
-local uiState = {
-	created = false,
-	listVisible = true,
-	introPlayed = false,
-	gui = nil,
-	listFrame = nil,
-	listContainer = nil,
-}
-
-local function keyCodeToText(keyCode)
-	if keyCode == Enum.KeyCode.RightAlt then
-		return "Right Alt"
-	end
-	return keyCode.Name
-end
-
-local function modeToText(mode)
-	if mode == "hold" then
-		return "Hold"
-	elseif mode == "press" then
-		return "Press"
-	elseif mode == "toggle" then
-		return "Toggle"
-	end
-	return tostring(mode or "Unknown")
-end
-
-local function setEmoteListVisible(visible)
-	uiState.listVisible = visible and true or false
-
-	if uiState.gui then
-		uiState.gui.Enabled = uiState.listVisible
-	end
-end
-
-local function toggleEmoteList()
-	if not uiState.created then
-		return
-	end
-	setEmoteListVisible(not uiState.listVisible)
-end
-
-local function populateEmoteList()
-	if not uiState.listContainer then
-		return
-	end
-
-	for _, child in ipairs(uiState.listContainer:GetChildren()) do
-		if child:IsA("Frame") then
-			child:Destroy()
-		end
-	end
-
-	for _, binding in ipairs(keybindActions) do
-		local row = Instance.new("Frame")
-		row.Name = (binding.name or "Action") .. "Row"
-		row.BackgroundTransparency = 1
-		row.Size = UDim2.new(1, -6, 0, 28)
-		row.Parent = uiState.listContainer
-
-		local nameLabel = Instance.new("TextLabel")
-		nameLabel.BackgroundTransparency = 1
-		nameLabel.Position = UDim2.new(0, 0, 0, 0)
-		nameLabel.Size = UDim2.new(0.58, 0, 1, 0)
-		nameLabel.Font = Enum.Font.Gotham
-		nameLabel.Text = tostring(binding.name or "CustomAction")
-		nameLabel.TextColor3 = Color3.fromRGB(245, 245, 245)
-		nameLabel.TextSize = 14
-		nameLabel.TextXAlignment = Enum.TextXAlignment.Left
-		nameLabel.Parent = row
-
-		local keyLabel = Instance.new("TextLabel")
-		keyLabel.BackgroundTransparency = 1
-		keyLabel.Position = UDim2.new(0.58, 0, 0, 0)
-		keyLabel.Size = UDim2.new(0.18, 0, 1, 0)
-		keyLabel.Font = Enum.Font.GothamSemibold
-		keyLabel.Text = keyCodeToText(binding.keyCode)
-		keyLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
-		keyLabel.TextSize = 14
-		keyLabel.TextXAlignment = Enum.TextXAlignment.Right
-		keyLabel.Parent = row
-
-		local modeLabel = Instance.new("TextLabel")
-		modeLabel.BackgroundTransparency = 1
-		modeLabel.Position = UDim2.new(0.77, 0, 0, 0)
-		modeLabel.Size = UDim2.new(0.23, 0, 1, 0)
-		modeLabel.Font = Enum.Font.GothamSemibold
-		modeLabel.Text = modeToText(binding.mode)
-		modeLabel.TextColor3 = Color3.fromRGB(140, 210, 255)
-		modeLabel.TextSize = 14
-		modeLabel.TextXAlignment = Enum.TextXAlignment.Right
-		modeLabel.Parent = row
-	end
-end
-
-local function createEmoteOverlay()
-	if uiState.created then
-		return
-	end
-	uiState.created = true
-
-	local screenGui = Instance.new("ScreenGui")
-	screenGui.Name = "EmoteKeybindOverlay"
-	screenGui.IgnoreGuiInset = true
-	screenGui.ResetOnSpawn = false
-	screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-	screenGui.Enabled = false
-	screenGui.Parent = playerGui
-
-	local listFrame = Instance.new("Frame")
-	listFrame.Name = "KeybindList"
-	listFrame.AnchorPoint = Vector2.new(1, 0)
-	listFrame.Position = UDim2.new(1, -18, 0.18, 0)
-	listFrame.Size = UDim2.new(0, 320, 0, 380)
-	listFrame.BackgroundColor3 = Color3.fromRGB(18, 18, 18)
-	listFrame.BackgroundTransparency = 0.15
-	listFrame.BorderSizePixel = 0
-	listFrame.Parent = screenGui
-	uiState.listFrame = listFrame
-	uiState.gui = screenGui
-
-	local corner = Instance.new("UICorner")
-	corner.CornerRadius = UDim.new(0, 10)
-	corner.Parent = listFrame
-
-	local stroke = Instance.new("UIStroke")
-	stroke.Color = Color3.fromRGB(70, 70, 70)
-	stroke.Thickness = 1
-	stroke.Transparency = 0.2
-	stroke.Parent = listFrame
-
-	local title = Instance.new("TextLabel")
-	title.BackgroundTransparency = 1
-	title.Position = UDim2.new(0, 14, 0, 10)
-	title.Size = UDim2.new(1, -28, 0, 22)
-	title.Font = Enum.Font.GothamBold
-	title.Text = "Emotes / Keybinds"
-	title.TextColor3 = Color3.fromRGB(255, 255, 255)
-	title.TextSize = 18
-	title.TextXAlignment = Enum.TextXAlignment.Left
-	title.Parent = listFrame
-
-	local hint = Instance.new("TextLabel")
-	hint.BackgroundTransparency = 1
-	hint.Position = UDim2.new(0, 14, 0, 33)
-	hint.Size = UDim2.new(1, -28, 0, 18)
-	hint.Font = Enum.Font.Gotham
-	hint.Text = "Right Alt toggles this list"
-	hint.TextColor3 = Color3.fromRGB(180, 180, 180)
-	hint.TextSize = 12
-	hint.TextXAlignment = Enum.TextXAlignment.Left
-	hint.Parent = listFrame
-
-	local divider = Instance.new("Frame")
-	divider.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-	divider.BorderSizePixel = 0
-	divider.Position = UDim2.new(0, 14, 0, 56)
-	divider.Size = UDim2.new(1, -28, 0, 1)
-	divider.Parent = listFrame
-
-	local header = Instance.new("Frame")
-	header.BackgroundTransparency = 1
-	header.Position = UDim2.new(0, 14, 0, 62)
-	header.Size = UDim2.new(1, -28, 0, 18)
-	header.Parent = listFrame
-
-	local actionHeader = Instance.new("TextLabel")
-	actionHeader.BackgroundTransparency = 1
-	actionHeader.Size = UDim2.new(0.58, 0, 1, 0)
-	actionHeader.Font = Enum.Font.GothamSemibold
-	actionHeader.Text = "Action"
-	actionHeader.TextColor3 = Color3.fromRGB(150, 150, 150)
-	actionHeader.TextSize = 12
-	actionHeader.TextXAlignment = Enum.TextXAlignment.Left
-	actionHeader.Parent = header
-
-	local keyHeader = Instance.new("TextLabel")
-	keyHeader.BackgroundTransparency = 1
-	keyHeader.Position = UDim2.new(0.58, 0, 0, 0)
-	keyHeader.Size = UDim2.new(0.18, 0, 1, 0)
-	keyHeader.Font = Enum.Font.GothamSemibold
-	keyHeader.Text = "Key"
-	keyHeader.TextColor3 = Color3.fromRGB(150, 150, 150)
-	keyHeader.TextSize = 12
-	keyHeader.TextXAlignment = Enum.TextXAlignment.Right
-	keyHeader.Parent = header
-
-	local modeHeader = Instance.new("TextLabel")
-	modeHeader.BackgroundTransparency = 1
-	modeHeader.Position = UDim2.new(0.77, 0, 0, 0)
-	modeHeader.Size = UDim2.new(0.23, 0, 1, 0)
-	modeHeader.Font = Enum.Font.GothamSemibold
-	modeHeader.Text = "Mode"
-	modeHeader.TextColor3 = Color3.fromRGB(150, 150, 150)
-	modeHeader.TextSize = 12
-	modeHeader.TextXAlignment = Enum.TextXAlignment.Right
-	modeHeader.Parent = header
-
-	local scrollingFrame = Instance.new("ScrollingFrame")
-	scrollingFrame.Name = "List"
-	scrollingFrame.BackgroundTransparency = 1
-	scrollingFrame.BorderSizePixel = 0
-	scrollingFrame.Position = UDim2.new(0, 12, 0, 86)
-	scrollingFrame.Size = UDim2.new(1, -24, 1, -98)
-	scrollingFrame.ScrollBarThickness = 4
-	scrollingFrame.ScrollBarImageColor3 = Color3.fromRGB(130, 130, 130)
-	scrollingFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
-	scrollingFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
-	scrollingFrame.Parent = listFrame
-
-	local layout = Instance.new("UIListLayout")
-	layout.Padding = UDim.new(0, 6)
-	layout.SortOrder = Enum.SortOrder.LayoutOrder
-	layout.Parent = scrollingFrame
-
-	uiState.listContainer = scrollingFrame
-	populateEmoteList()
-	setEmoteListVisible(true)
-end
-
-local function playIntro()
-	if uiState.introPlayed then
-		return
-	end
-	uiState.introPlayed = true
-
-	task.wait(3)
-
-	local introGui = Instance.new("ScreenGui")
-	introGui.Name = "IntroDecalGui"
-	introGui.IgnoreGuiInset = true
-	introGui.ResetOnSpawn = false
-	introGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-	introGui.DisplayOrder = 999
-	introGui.Enabled = false
-	introGui.Parent = playerGui
-
-	local backdrop = Instance.new("Frame")
-	backdrop.Name = "Backdrop"
-	backdrop.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-	backdrop.BackgroundTransparency = 1
-	backdrop.BorderSizePixel = 0
-	backdrop.Size = UDim2.fromScale(1, 1)
-	backdrop.Parent = introGui
-
-	local backdropFade = Instance.new("Frame")
-	backdropFade.Name = "BackdropFade"
-	backdropFade.BackgroundColor3 = Color3.fromRGB(6, 6, 10)
-	backdropFade.BackgroundTransparency = 1
-	backdropFade.BorderSizePixel = 0
-	backdropFade.Size = UDim2.fromScale(1, 1)
-	backdropFade.Parent = introGui
-
-	local holder = Instance.new("Frame")
-	holder.Name = "Holder"
-	holder.BackgroundTransparency = 1
-	holder.AnchorPoint = Vector2.new(0.5, 0.5)
-	holder.Position = UDim2.new(0.5, 0, 0.42, 0)
-	holder.Size = UDim2.new(0, 800, 0, 509) -- ~1221x776 ratio, larger overall
-	holder.Rotation = -8
-	holder.Parent = introGui
-
-	local holderScale = Instance.new("UIScale")
-	holderScale.Scale = 0.72
-	holderScale.Parent = holder
-
-	local glow = Instance.new("Frame")
-	glow.Name = "Glow"
-	glow.BackgroundColor3 = Color3.fromRGB(120, 170, 255)
-	glow.BackgroundTransparency = 1
-	glow.BorderSizePixel = 0
-	glow.AnchorPoint = Vector2.new(0.5, 0.5)
-	glow.Position = UDim2.new(0.5, 0, 0.5, 0)
-	glow.Size = UDim2.new(1, 84, 1, 84)
-	glow.ZIndex = 1
-	glow.Parent = holder
-
-	local glowCorner = Instance.new("UICorner")
-	glowCorner.CornerRadius = UDim.new(0, 26)
-	glowCorner.Parent = glow
-
-	local glowStroke = Instance.new("UIStroke")
-	glowStroke.Color = Color3.fromRGB(150, 205, 255)
-	glowStroke.Thickness = 4
-	glowStroke.Transparency = 1
-	glowStroke.Parent = glow
-
-	local shadow = Instance.new("ImageLabel")
-	shadow.Name = "Shadow"
-	shadow.BackgroundTransparency = 1
-	shadow.BorderSizePixel = 0
-	shadow.AnchorPoint = Vector2.new(0.5, 0.5)
-	shadow.Position = UDim2.new(0.5, 18, 0.5, 24)
-	shadow.Size = UDim2.new(1, 18, 1, 18)
-	shadow.Image = "rbxasset://textures/ui/GuiImagePlaceholder.png"
-	shadow.ImageColor3 = Color3.fromRGB(0, 0, 0)
-	shadow.ImageTransparency = 1
-	shadow.ScaleType = Enum.ScaleType.Fit
-	shadow.Parent = holder
-	shadow.ZIndex = 1
-
-	local image = Instance.new("ImageLabel")
-	image.Name = "Decal"
-	image.BackgroundTransparency = 1
-	image.BorderSizePixel = 0
-	image.AnchorPoint = Vector2.new(0.5, 0.5)
-	image.Position = UDim2.new(0.5, 0, 0.5, 0)
-	image.Size = UDim2.new(1, 0, 1, 0)
-	image.Image = "rbxassetid://99946360339614"
-	image.ImageTransparency = 1
-	image.ScaleType = Enum.ScaleType.Fit
-	image.ZIndex = 3
-	image.Parent = holder
-
-	local imageCorner = Instance.new("UICorner")
-	imageCorner.CornerRadius = UDim.new(0, 20)
-	imageCorner.Parent = image
-
-	local imageStroke = Instance.new("UIStroke")
-	imageStroke.Color = Color3.fromRGB(255, 255, 255)
-	imageStroke.Thickness = 2
-	imageStroke.Transparency = 1
-	imageStroke.Parent = image
-
-	local rim = Instance.new("Frame")
-	rim.Name = "Rim"
-	rim.BackgroundTransparency = 1
-	rim.BorderSizePixel = 0
-	rim.AnchorPoint = Vector2.new(0.5, 0.5)
-	rim.Position = UDim2.new(0.5, 0, 0.5, 0)
-	rim.Size = UDim2.new(1, 10, 1, 10)
-	rim.ZIndex = 2
-	rim.Parent = holder
-
-	local rimCorner = Instance.new("UICorner")
-	rimCorner.CornerRadius = UDim.new(0, 22)
-	rimCorner.Parent = rim
-
-	local rimStroke = Instance.new("UIStroke")
-	rimStroke.Color = Color3.fromRGB(255, 255, 255)
-	rimStroke.Thickness = 2
-	rimStroke.Transparency = 1
-	rimStroke.Parent = rim
-
-	local scan = Instance.new("Frame")
-	scan.Name = "Scan"
-	scan.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-	scan.BackgroundTransparency = 1
-	scan.BorderSizePixel = 0
-	scan.Size = UDim2.new(1, 0, 0, 0)
-	scan.Position = UDim2.new(0, 0, 0.12, 0)
-	scan.ZIndex = 4
-	scan.Parent = image
-
-	local scanGradient = Instance.new("UIGradient")
-	scanGradient.Color = ColorSequence.new({
-		ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
-		ColorSequenceKeypoint.new(0.5, Color3.fromRGB(170, 220, 255)),
-		ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 255, 255)),
-	})
-	scanGradient.Transparency = NumberSequence.new({
-		NumberSequenceKeypoint.new(0, 1),
-		NumberSequenceKeypoint.new(0.5, 0.35),
-		NumberSequenceKeypoint.new(1, 1),
-	})
-	scanGradient.Parent = scan
-
-	local preloadOk = pcall(function()
-		ContentProvider:PreloadAsync({ image })
-	end)
-
-	introGui.Enabled = true
-
-	local fadeInInfo = TweenInfo.new(0.22, Enum.EasingStyle.Sine, Enum.EasingDirection.Out)
-	local popInfo = TweenInfo.new(0.45, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
-	local settleInfo = TweenInfo.new(0.16, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-
-	TweenService:Create(backdrop, fadeInInfo, { BackgroundTransparency = 0.38 }):Play()
-	TweenService:Create(backdropFade, fadeInInfo, { BackgroundTransparency = 0.72 }):Play()
-	TweenService:Create(holderScale, popInfo, { Scale = 1.08 }):Play()
-	TweenService:Create(holder, popInfo, {
-		Rotation = 0,
-		Position = UDim2.new(0.5, 0, 0.43, 0),
-	}):Play()
-
-	TweenService:Create(glow, fadeInInfo, { BackgroundTransparency = 0.88 }):Play()
-	TweenService:Create(glowStroke, fadeInInfo, { Transparency = 0.45 }):Play()
-	TweenService:Create(rimStroke, fadeInInfo, { Transparency = 0.55 }):Play()
-	TweenService:Create(imageStroke, fadeInInfo, { Transparency = 0.62 }):Play()
-	TweenService:Create(shadow, fadeInInfo, { ImageTransparency = 0.75 }):Play()
-
-	if preloadOk then
-		TweenService:Create(image, TweenInfo.new(0.24, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-			ImageTransparency = 0,
-		}):Play()
-	else
-		TweenService:Create(image, TweenInfo.new(0.35, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-			ImageTransparency = 0,
-		}):Play()
-	end
-
-	task.delay(0.3, function()
-		if not introGui.Parent then
-			return
-		end
-
-		TweenService:Create(holderScale, settleInfo, { Scale = 1 }):Play()
-		TweenService:Create(holder, settleInfo, { Rotation = 0 }):Play()
-		TweenService:Create(glow, settleInfo, { BackgroundTransparency = 1 }):Play()
-		TweenService:Create(glowStroke, settleInfo, { Transparency = 1 }):Play()
-	end)
-
-	task.delay(0.72, function()
-		if not introGui.Parent then
-			return
-		end
-
-		local fadeOutInfo = TweenInfo.new(0.42, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
-		TweenService:Create(image, fadeOutInfo, { ImageTransparency = 1 }):Play()
-		TweenService:Create(shadow, fadeOutInfo, { ImageTransparency = 1 }):Play()
-		TweenService:Create(rimStroke, fadeOutInfo, { Transparency = 1 }):Play()
-		TweenService:Create(imageStroke, fadeOutInfo, { Transparency = 1 }):Play()
-		TweenService:Create(backdrop, fadeOutInfo, { BackgroundTransparency = 1 }):Play()
-		TweenService:Create(backdropFade, fadeOutInfo, { BackgroundTransparency = 1 }):Play()
-		TweenService:Create(holderScale, fadeOutInfo, { Scale = 1.03 }):Play()
-		TweenService:Create(holder, fadeOutInfo, {
-			Position = UDim2.new(0.5, 0, 0.415, 0),
-			Rotation = 2,
-		}):Play()
-
-		task.delay(0.46, function()
-			if introGui then
-				introGui:Destroy()
-			end
-		end)
-	end)
-end
-
-createEmoteOverlay()
-playIntro()
-
-UserInputService.InputBegan:Connect(function(inputObject, gameProcessed)
-	if gameProcessed then
-		return
-	end
-
-	if inputObject.KeyCode == Enum.KeyCode.RightAlt then
-		toggleEmoteList()
-	end
+local character = player.Character or player.CharacterAdded:Wait()
+
+local animator = nil
+local originalHipHeight = nil
+
+player.CharacterAdded:Connect(function(c)
+	character = c
+	animator = nil
+	originalHipHeight = nil
 end)
 
-local animNames = {
-	idle = {
-		{ id = "http://www.roblox.com/asset/?id=78809479095741", weight = 1 },
-		{ id = "http://www.roblox.com/asset/?id=104342455423558", weight = 1 },
-		{ id = "http://www.roblox.com/asset/?id=89179616136359", weight = 1 },
-		{ id = "http://www.roblox.com/asset/?id=79493772354232", weight = 1 },
-		{ id = "http://www.roblox.com/asset/?id=80997638859162", weight = 1 },
-		{ id = "http://www.roblox.com/asset/?id=114843552733773", weight = 1 },
-		{ id = "http://www.roblox.com/asset/?id=139856242706116", weight = 1 },
-		{ id = "http://www.roblox.com/asset/?id=132482243634511", weight = 1 },
-		{ id = "http://www.roblox.com/asset/?id=80997638859162", weight = 1 },
-		{ id = "http://www.roblox.com/asset/?id=134741630981082", weight = 1 },
-	},
-	walk = {
-		{ id = "http://www.roblox.com/asset/?id=81902773529444", weight = 10 },
-	},
-	run = {
-		{ id = "http://www.roblox.com/asset/?id=85475131476587", weight = 10 },
-	},
-	swim = {
-		{ id = "http://www.roblox.com/asset/?id=16738339158", weight = 10 },
-	},
-	swimidle = {
-		{ id = "http://www.roblox.com/asset/?id=16738339817", weight = 10 },
-	},
-	jump = {
-		{ id = "http://www.roblox.com/asset/?id=16738336650", weight = 10 },
-	},
-	fall = {
-		{ id = "http://www.roblox.com/asset/?id=16738333171", weight = 10 },
-	},
-	climb = {
-		{ id = "http://www.roblox.com/asset/?id=16738332169", weight = 10 },
-	},
-	sit = {
-		{ id = "http://www.roblox.com/asset/?id=2506281703", weight = 10 },
-	},
-	toolnone = {
-		{ id = "http://www.roblox.com/asset/?id=507768375", weight = 10 },
-	},
-	toolslash = {
-		{ id = "http://www.roblox.com/asset/?id=522635514", weight = 10 },
-	},
-	toollunge = {
-		{ id = "http://www.roblox.com/asset/?id=522638767", weight = 10 },
-	},
-	wave = {
-		{ id = "http://www.roblox.com/asset/?id=507770239", weight = 10 },
-	},
-	point = {
-		{ id = "http://www.roblox.com/asset/?id=507770453", weight = 10 },
-	},
-	dance = {
-		{ id = "http://www.roblox.com/asset/?id=507771019", weight = 10 },
-		{ id = "http://www.roblox.com/asset/?id=507771955", weight = 10 },
-		{ id = "http://www.roblox.com/asset/?id=507772104", weight = 10 },
-	},
-	dance2 = {
-		{ id = "http://www.roblox.com/asset/?id=507776043", weight = 10 },
-		{ id = "http://www.roblox.com/asset/?id=507776720", weight = 10 },
-		{ id = "http://www.roblox.com/asset/?id=507776879", weight = 10 },
-	},
-	dance3 = {
-		{ id = "http://www.roblox.com/asset/?id=507777268", weight = 10 },
-		{ id = "http://www.roblox.com/asset/?id=507777451", weight = 10 },
-		{ id = "http://www.roblox.com/asset/?id=507777623", weight = 10 },
-	},
-	laugh = {
-		{ id = "http://www.roblox.com/asset/?id=507770818", weight = 10 },
-	},
-	cheer = {
-		{ id = "http://www.roblox.com/asset/?id=507770677", weight = 10 },
-	},
+-- CONFIG
+local CONFIG_URL = "https://raw.githubusercontent.com/femce4l20/new/refs/heads/main/tabs.lua"
+
+-- Force GitHub-only mode:
+-- When true, the script will skip local file reads/writes entirely and only use the GitHub URL.
+local FORCE_GITHUB_ONLY = false
+
+-- Local file settings
+local LOCAL_FOLDER = "Seximation"
+local LOCAL_FILE = LOCAL_FOLDER .. "/tabs.lua"
+
+local fallbackConfig = {
+	{ name = "Emotes", animations = {
+		{ id = "rbxassetid://124575754112740", name = "shiii ts broke frfr", start = nil, finish = nil, hipHeight = -5, speed = 1 },
+	}},
+	{ name = "Test", animations = {
+		{ id = "90651744667158", name = "pingpong test", start = 0, finish = 5, pingpong = true, speed = 1.5 },
+	}},
 }
 
-local emoteNames = {
-	wave = false,
-	point = false,
-	dance = true,
-	dance2 = true,
-	dance3 = true,
-	laugh = false,
-	cheer = false,
-}
-
-local EMOTE_TRANSITION_TIME = 0.1
-local HumanoidHipHeight = 2
-
-local activeCleanup = nil
-
-local function startForCharacter(Character)
-	if activeCleanup then
-		activeCleanup()
-		activeCleanup = nil
+local function normalizeAnimationId(raw)
+	if not raw then return nil end
+	raw = tostring(raw):gsub("^%s*(.-)%s*$", "%1")
+	local digits = raw:match("(%d+)")
+	if digits then
+		return "rbxassetid://" .. digits
 	end
+	if raw:match("^rbxassetid://") then return raw end
+	return nil
+end
 
-	local Humanoid = Character:WaitForChild("Humanoid")
-	local Animator = Humanoid:FindFirstChildOfClass("Animator") or Instance.new("Animator")
-	Animator.Parent = Humanoid
+-- Synapse file helpers
+local localCacheSupported = nil
 
-	-- Disable the default Roblox Animate script so this one fully controls animations
-	local defaultAnimate = Character:FindFirstChild("Animate")
-	if defaultAnimate then
-		defaultAnimate:Destroy()
-	end
-
-	-- Stop any currently playing tracks from the previous animation system
-	for _, track in ipairs(Animator:GetPlayingAnimationTracks()) do
+local function ensureLocalFolder()
+	if makefolder then
 		pcall(function()
-			track:Stop(0)
-			track:Destroy()
+			if not isfolder or not isfolder(LOCAL_FOLDER) then
+				if makefolder then makefolder(LOCAL_FOLDER) end
+			end
 		end)
 	end
+end
 
-	local pose = "Standing"
-	local AnimationSpeedDampeningObject = script:FindFirstChild("ScaleDampeningPercent")
-
-	local currentAnim = ""
-	local currentAnimInstance = nil
-	local currentAnimTrack = nil
-	local currentAnimKeyframeHandler = nil
-	local currentAnimSpeed = 1.0
-
-	local runAnimTrack = nil
-	local runAnimKeyframeHandler = nil
-
-	local PreloadedAnims = {}
-	local animTable = {}
-
-	local toolAnim = "None"
-	local toolAnimTime = 0
-	local jumpAnimTime = 0
-	local jumpAnimDuration = 0.31
-	local toolTransitionTime = 0.1
-	local fallTransitionTime = 0.2
-	local currentlyPlayingEmote = false
-
-	local toolAnimName = ""
-	local toolAnimTrack = nil
-	local toolAnimInstance = nil
-	local currentToolAnimKeyframeHandler = nil
-
-	local connections = {}
-
-	local isIdle = false
-	local currentIdleIndex = 1
-	local nextIdleIndex = 1
-	local idleTrack = nil
-
-	-- Build custom keybind table with optional startTime/endTime for ping-pong
-	local function buildCustomBindings()
-		local bindings = {}
-		for _, binding in ipairs(keybindActions) do
-			local newBinding = {
-				name = binding.name or "CustomAction",
-				keyCode = binding.keyCode,
-				mode = binding.mode or "press",
-				animationId = normalizeAnimationId(binding.animationId),
-				looped = binding.looped,
-				priority = binding.priority or Enum.AnimationPriority.Action,
-				track = nil,
-				animation = nil,
-				isActive = false,
-				ignoreStop = false,
-			}
-			if binding.startTime then newBinding.startTime = binding.startTime end
-			if binding.endTime then newBinding.endTime = binding.endTime end
-			table.insert(bindings, newBinding)
-		end
-		return bindings
-	end
-	local customBindings = buildCustomBindings()
-	local currentCustomAction = nil
-
-	local function connect(signal, fn)
-		local c = signal:Connect(fn)
-		table.insert(connections, c)
-		return c
+local function probeLocalCacheSupport()
+	if FORCE_GITHUB_ONLY then
+		localCacheSupported = false
+		return false
 	end
 
-	local function cleanupConnections()
-		for _, c in ipairs(connections) do
+	if localCacheSupported ~= nil then
+		return localCacheSupported
+	end
+
+	if not (writefile and readfile) then
+		localCacheSupported = false
+		return false
+	end
+
+	ensureLocalFolder()
+
+	local probeFile = LOCAL_FOLDER .. "/.__cache_probe.tmp"
+	local ok = pcall(function()
+		writefile(probeFile, "probe")
+		local _ = readfile(probeFile)
+		if delfile then
 			pcall(function()
-				c:Disconnect()
+				delfile(probeFile)
 			end)
 		end
-		table.clear(connections)
-	end
+	end)
 
-	local function stopTrack(track, fadeTime)
-		if track then
-			pcall(function()
-				track:Stop(fadeTime or 0)
-				track:Destroy()
-			end)
+	localCacheSupported = ok
+	return localCacheSupported
+end
+
+local function localFileExists()
+	if not probeLocalCacheSupport() then
+		return false
+	end
+	if isfile then
+		local ok, res = pcall(function() return isfile(LOCAL_FILE) end)
+		return ok and res
+	end
+	return false
+end
+
+local function readLocalFile()
+	if not probeLocalCacheSupport() then
+		return nil
+	end
+	if readfile and localFileExists() then
+		local ok, content = pcall(function() return readfile(LOCAL_FILE) end)
+		if ok then return content end
+	end
+	return nil
+end
+
+local function writeLocalFile(content)
+	if not probeLocalCacheSupport() then
+		return false
+	end
+	if writefile then
+		local ok = pcall(function()
+			ensureLocalFolder()
+			writefile(LOCAL_FILE, content)
+		end)
+		if not ok then
+			localCacheSupported = false
+			return false
+		end
+		return true
+	end
+	localCacheSupported = false
+	return false
+end
+
+local function deleteLocalFile()
+	if not probeLocalCacheSupport() then
+		return false
+	end
+	if delfile and localFileExists() then
+		pcall(function() delfile(LOCAL_FILE) end)
+	end
+	return true
+end
+
+local function applyDefaultAnimationFields(tbl)
+	if type(tbl) ~= "table" then
+		return tbl
+	end
+	for _, tab in ipairs(tbl) do
+		for _, anim in ipairs(tab.animations or {}) do
+			if anim.speed == nil then
+				anim.speed = 1
+			end
+		end
+	end
+	return tbl
+end
+
+local function serializeConfig(tbl)
+	local lines = {}
+	table.insert(lines, "return {")
+	for _, tab in ipairs(tbl) do
+		local tabName = tab.name or ""
+		table.insert(lines, ("  { name = %q, animations = {"):format(tabName))
+		for _, anim in ipairs(tab.animations or {}) do
+			local pieces = {}
+			if anim.id ~= nil then table.insert(pieces, ("id = %q"):format(anim.id)) end
+			if anim.name ~= nil then table.insert(pieces, ("name = %q"):format(anim.name)) end
+			if anim.start ~= nil then table.insert(pieces, ("start = %s"):format(tostring(anim.start))) end
+			if anim.finish ~= nil then table.insert(pieces, ("finish = %s"):format(tostring(anim.finish))) end
+			if anim.hipHeight ~= nil then table.insert(pieces, ("hipHeight = %s"):format(tostring(anim.hipHeight))) end
+			if anim.pingpong ~= nil then table.insert(pieces, ("pingpong = %s"):format(tostring(anim.pingpong))) end
+			if anim.speed ~= nil and anim.speed ~= 1 then
+				table.insert(pieces, ("speed = %s"):format(tostring(anim.speed)))
+			end
+			table.insert(lines, "    { " .. table.concat(pieces, ", ") .. " },")
+		end
+		table.insert(lines, "  } },")
+	end
+	table.insert(lines, "}")
+	return table.concat(lines, "\n")
+end
+
+local function loadRemoteOrLocalConfig()
+	local useLocalCache = probeLocalCacheSupport()
+
+	if useLocalCache then
+		local localContent = readLocalFile()
+		if localContent then
+			local ok, f = pcall(function() return loadstring(localContent) end)
+			if ok and type(f) == "function" then
+				local success, result = pcall(function() return f() end)
+				if success and type(result) == "table" then
+					return applyDefaultAnimationFields(result)
+				end
+			end
 		end
 	end
 
-	local function stopMainAnimationTracks(fadeTime)
-		if currentAnimKeyframeHandler then
-			pcall(function()
-				currentAnimKeyframeHandler:Disconnect()
-			end)
-			currentAnimKeyframeHandler = nil
+	local ok, result = pcall(function()
+		local code = game:HttpGet(CONFIG_URL)
+		local f = loadstring(code)
+		assert(type(f) == "function", "Code did not return function")
+		return f()
+	end)
+
+	if ok and type(result) == "table" then
+		result = applyDefaultAnimationFields(result)
+		if useLocalCache then
+			writeLocalFile(serializeConfig(result))
 		end
-
-		if runAnimKeyframeHandler then
-			pcall(function()
-				runAnimKeyframeHandler:Disconnect()
-			end)
-			runAnimKeyframeHandler = nil
+		return result
+	else
+		if useLocalCache then
+			writeLocalFile(serializeConfig(fallbackConfig))
 		end
+		return applyDefaultAnimationFields(fallbackConfig)
+	end
+end
 
-		stopTrack(currentAnimTrack, fadeTime)
-		stopTrack(runAnimTrack, fadeTime)
+local tabConfig = loadRemoteOrLocalConfig()
 
-		currentAnimTrack = nil
-		runAnimTrack = nil
-		currentAnim = ""
-		currentAnimInstance = nil
+local function findTabIndexByName(name)
+	for i, t in ipairs(tabConfig) do
+		if t.name == name then return i end
+	end
+	return nil
+end
+
+local function ensureTabExists(name)
+	local idx = findTabIndexByName(name)
+	if idx then return idx end
+	local newTab = { name = name, animations = {} }
+	table.insert(tabConfig, newTab)
+	writeLocalFile(serializeConfig(tabConfig))
+	return #tabConfig
+end
+
+-- ===== UI THEME =====
+local Theme = {
+	BG = Color3.fromRGB(13, 13, 16),
+	Panel = Color3.fromRGB(21, 21, 26),
+	Panel2 = Color3.fromRGB(28, 28, 34),
+	Surface = Color3.fromRGB(35, 35, 42),
+	Surface2 = Color3.fromRGB(42, 42, 50),
+	Stroke = Color3.fromRGB(255, 255, 255),
+	Text = Color3.fromRGB(244, 244, 246),
+	Muted = Color3.fromRGB(180, 180, 188),
+	Accent = Color3.fromRGB(255, 186, 202), -- light pink
+	AccentHover = Color3.fromRGB(255, 205, 216),
+	AccentDeep = Color3.fromRGB(245, 145, 170),
+	AccentSoft = Color3.fromRGB(255, 222, 230),
+	Danger = Color3.fromRGB(165, 78, 94),
+	DangerHover = Color3.fromRGB(184, 94, 111),
+	Success = Color3.fromRGB(92, 145, 114),
+	SuccessHover = Color3.fromRGB(110, 167, 130),
+}
+
+local function addCorner(parent, radius)
+	local corner = Instance.new("UICorner")
+	corner.CornerRadius = UDim.new(0, radius or 10)
+	corner.Parent = parent
+	return corner
+end
+
+local function addStroke(parent, color, transparency, thickness)
+	local stroke = Instance.new("UIStroke")
+	stroke.Color = color or Theme.Stroke
+	stroke.Transparency = transparency or 0.84
+	stroke.Thickness = thickness or 1
+	stroke.Parent = parent
+	return stroke
+end
+
+local function addPadding(parent, left, right, top, bottom)
+	local pad = Instance.new("UIPadding")
+	pad.PaddingLeft = UDim.new(0, left or 0)
+	pad.PaddingRight = UDim.new(0, right or 0)
+	pad.PaddingTop = UDim.new(0, top or 0)
+	pad.PaddingBottom = UDim.new(0, bottom or 0)
+	pad.Parent = parent
+	return pad
+end
+
+local function tween(obj, info, props)
+	return TweenService:Create(obj, info or TweenInfo.new(0.18, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), props)
+end
+
+local function softPanel(frame, radius)
+	frame.BackgroundColor3 = Theme.Panel
+	frame.BorderSizePixel = 0
+	addCorner(frame, radius or 14)
+	addStroke(frame, Theme.Stroke, 0.9, 1)
+end
+
+local function softButton(btn, opts)
+	opts = opts or {}
+	btn.AutoButtonColor = false
+	btn.BorderSizePixel = 0
+	btn.Font = opts.Font or Enum.Font.Gotham
+	btn.TextSize = opts.TextSize or 13
+	btn.TextColor3 = opts.TextColor3 or Theme.Text
+	btn.BackgroundColor3 = opts.BackgroundColor3 or Theme.Surface
+	addCorner(btn, opts.CornerRadius or 10)
+	addStroke(btn, Theme.Stroke, opts.StrokeTransparency or 0.88, 1)
+
+	local normal = btn.BackgroundColor3
+	local hover = opts.HoverColor3 or Theme.Surface2
+	local selected = opts.SelectedColor3 or Theme.Accent
+	local selectedText = opts.SelectedTextColor3 or Color3.fromRGB(20, 20, 22)
+
+	btn.MouseEnter:Connect(function()
+		if btn:GetAttribute("Selected") then
+			tween(btn, TweenInfo.new(0.15), { BackgroundColor3 = selected }):Play()
+		else
+			tween(btn, TweenInfo.new(0.15), { BackgroundColor3 = hover }):Play()
+		end
+	end)
+
+	btn.MouseLeave:Connect(function()
+		if btn:GetAttribute("Selected") then
+			tween(btn, TweenInfo.new(0.15), { BackgroundColor3 = selected, TextColor3 = selectedText }):Play()
+		else
+			tween(btn, TweenInfo.new(0.15), { BackgroundColor3 = normal }):Play()
+		end
+	end)
+end
+
+local function softInput(input, opts)
+	opts = opts or {}
+	input.BorderSizePixel = 0
+	input.BackgroundColor3 = opts.BackgroundColor3 or Theme.Surface
+	input.TextColor3 = opts.TextColor3 or Theme.Text
+	input.PlaceholderColor3 = opts.PlaceholderColor3 or Theme.Muted
+	input.Font = opts.Font or Enum.Font.Gotham
+	input.TextSize = opts.TextSize or 13
+	addCorner(input, opts.CornerRadius or 10)
+	addStroke(input, Theme.Stroke, opts.StrokeTransparency or 0.88, 1)
+end
+
+local function softLabel(lbl, muted)
+	lbl.BackgroundTransparency = 1
+	lbl.Font = Enum.Font.Gotham
+	lbl.TextColor3 = muted and Theme.Muted or Theme.Text
+end
+
+local function setSelected(btn, selected)
+	btn:SetAttribute("Selected", selected and true or false)
+	if selected then
+		btn.BackgroundColor3 = Theme.Accent
+		btn.TextColor3 = Color3.fromRGB(22, 20, 22)
+	else
+		btn.BackgroundColor3 = Theme.Surface
+		btn.TextColor3 = Theme.Text
+	end
+end
+
+-- ===== UI =====
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "SeximationGui"
+screenGui.ResetOnSpawn = false
+screenGui.IgnoreGuiInset = true
+screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+screenGui.Parent = player:WaitForChild("PlayerGui")
+
+local mainFrame = Instance.new("Frame")
+mainFrame.Name = "Main"
+mainFrame.Size = UDim2.new(0, 430, 0, 360)
+mainFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
+mainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
+mainFrame.BackgroundColor3 = Theme.BG
+mainFrame.BorderSizePixel = 0
+mainFrame.Active = true
+mainFrame.Parent = screenGui
+softPanel(mainFrame, 16)
+
+local mainGradient = Instance.new("UIGradient")
+mainGradient.Color = ColorSequence.new({
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(18, 18, 22)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(13, 13, 16)),
+})
+mainGradient.Rotation = 90
+mainGradient.Parent = mainFrame
+
+local titleBar = Instance.new("Frame")
+titleBar.Name = "TitleBar"
+titleBar.Size = UDim2.new(1, 0, 0, 38)
+titleBar.BackgroundColor3 = Theme.Panel
+titleBar.BorderSizePixel = 0
+titleBar.Parent = mainFrame
+addCorner(titleBar, 16)
+
+local titleClip = Instance.new("Frame")
+titleClip.Name = "TitleClip"
+titleClip.Size = UDim2.new(1, 0, 0, 20)
+titleClip.Position = UDim2.new(0, 0, 1, -20)
+titleClip.BackgroundColor3 = Theme.Panel
+titleClip.BorderSizePixel = 0
+titleClip.Parent = titleBar
+
+local titleGradient = Instance.new("UIGradient")
+titleGradient.Color = ColorSequence.new({
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(29, 29, 35)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(20, 20, 25)),
+})
+titleGradient.Rotation = 90
+titleGradient.Parent = titleBar
+
+local titleLabel = Instance.new("TextLabel")
+titleLabel.Size = UDim2.new(1, -168, 1, 0)
+titleLabel.Position = UDim2.new(0, 14, 0, 0)
+titleLabel.BackgroundTransparency = 1
+titleLabel.Text = "Seximation"
+titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+titleLabel.Font = Enum.Font.GothamBold
+titleLabel.TextSize = 15
+titleLabel.TextColor3 = Theme.Text
+titleLabel.Parent = titleBar
+
+local titleSub = Instance.new("TextLabel")
+titleSub.Size = UDim2.new(1, -168, 1, 0)
+titleSub.Position = UDim2.new(0, 14, 0, 15)
+titleSub.BackgroundTransparency = 1
+titleSub.Text = "Lets get that freak on😛"
+titleSub.TextXAlignment = Enum.TextXAlignment.Left
+titleSub.Font = Enum.Font.Gotham
+titleSub.TextSize = 10
+titleSub.TextColor3 = Theme.Muted
+titleSub.Parent = titleBar
+
+local function makeTitleButton(text, posX, bg, hover, textColor)
+	local btn = Instance.new("TextButton")
+	btn.Size = UDim2.new(0, 28, 0, 28)
+	btn.Position = UDim2.new(1, posX, 0, 5)
+	btn.AnchorPoint = Vector2.new(1, 0)
+	btn.Text = text
+	btn.Font = Enum.Font.GothamBold
+	btn.TextSize = 14
+	btn.TextColor3 = textColor or Theme.Text
+	btn.BackgroundColor3 = bg or Theme.Surface
+	btn.Parent = titleBar
+	softButton(btn, {
+		CornerRadius = 10,
+		BackgroundColor3 = bg or Theme.Surface,
+		HoverColor3 = hover or Theme.Surface2,
+		TextColor3 = textColor or Theme.Text,
+		StrokeTransparency = 0.9,
+		TextSize = 14,
+	})
+	return btn
+end
+
+local closeBtn = makeTitleButton("×", -8, Theme.Danger, Theme.DangerHover, Theme.Text)
+local minimizeBtn = makeTitleButton("–", -42, Theme.Surface, Theme.Surface2, Theme.Text)
+local infoBtn = makeTitleButton("i", -76, Theme.Surface, Theme.AccentHover, Theme.Text)
+
+local searchBox = Instance.new("TextBox")
+searchBox.Name = "SearchBox"
+searchBox.Size = UDim2.new(1, -18, 0, 32)
+searchBox.Position = UDim2.new(0, 9, 0, 44)
+searchBox.PlaceholderText = "Search animations..."
+searchBox.BackgroundColor3 = Theme.Surface
+searchBox.TextColor3 = Theme.Text
+searchBox.Font = Enum.Font.Gotham
+searchBox.Text = ""
+searchBox.TextSize = 13
+searchBox.ClearTextOnFocus = false
+searchBox.Parent = mainFrame
+softInput(searchBox, { BackgroundColor3 = Theme.Surface, StrokeTransparency = 0.9 })
+
+local tabsFrame = Instance.new("ScrollingFrame")
+tabsFrame.Name = "Tabs"
+tabsFrame.Size = UDim2.new(0, 124, 1, -84)
+tabsFrame.Position = UDim2.new(0, 0, 0, 84)
+tabsFrame.BackgroundTransparency = 1
+tabsFrame.BorderSizePixel = 0
+tabsFrame.Parent = mainFrame
+tabsFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+tabsFrame.ScrollBarThickness = 6
+tabsFrame.VerticalScrollBarInset = Enum.ScrollBarInset.ScrollBar
+tabsFrame.ScrollingDirection = Enum.ScrollingDirection.Y
+addPadding(tabsFrame, 10, 6, 6, 6)
+
+local tabsList = Instance.new("UIListLayout")
+tabsList.Parent = tabsFrame
+tabsList.Padding = UDim.new(0, 8)
+tabsList.HorizontalAlignment = Enum.HorizontalAlignment.Center
+tabsList.SortOrder = Enum.SortOrder.LayoutOrder
+
+tabsList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+	local total = tabsList.AbsoluteContentSize.Y
+	tabsFrame.CanvasSize = UDim2.new(0, 0, 0, total + 12)
+end)
+
+local contentFrame = Instance.new("Frame")
+contentFrame.Name = "Content"
+contentFrame.Size = UDim2.new(1, -124, 1, -84)
+contentFrame.Position = UDim2.new(0, 124, 0, 84)
+contentFrame.BackgroundTransparency = 1
+contentFrame.Parent = mainFrame
+
+local tabContentFolder = Instance.new("Folder")
+tabContentFolder.Name = "TabContents"
+tabContentFolder.Parent = contentFrame
+
+local searchContent = Instance.new("Frame")
+searchContent.Name = "Search_Content"
+searchContent.Size = UDim2.new(1, 0, 1, 0)
+searchContent.BackgroundTransparency = 1
+searchContent.Parent = tabContentFolder
+searchContent.Visible = false
+
+local searchScroll = Instance.new("ScrollingFrame")
+searchScroll.Size = UDim2.new(1, -14, 1, -14)
+searchScroll.Position = UDim2.new(0, 7, 0, 7)
+searchScroll.BackgroundTransparency = 1
+searchScroll.BorderSizePixel = 0
+searchScroll.Parent = searchContent
+searchScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+searchScroll.ScrollBarThickness = 6
+searchScroll.ScrollingDirection = Enum.ScrollingDirection.Y
+
+local searchListLayout = Instance.new("UIListLayout")
+searchListLayout.Parent = searchScroll
+searchListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+searchListLayout.Padding = UDim.new(0, 8)
+
+local buttonStates = {
+	normal = Theme.Surface,
+	hover = Theme.Surface2,
+	selected = Theme.Accent,
+	playing = Theme.AccentDeep,
+	disabled = Color3.fromRGB(58, 58, 64)
+}
+
+local function styleButton(btn)
+	btn.BackgroundColor3 = buttonStates.normal
+	btn.BorderSizePixel = 0
+	btn.AutoButtonColor = false
+	btn.Font = Enum.Font.Gotham
+	btn.TextSize = 13
+	btn.TextColor3 = Theme.Text
+	btn.Size = UDim2.new(1, -12, 0, 40)
+	btn.AnchorPoint = Vector2.new(0, 0)
+	addCorner(btn, 10)
+	addStroke(btn, Theme.Stroke, 0.9, 1)
+
+	btn.MouseEnter:Connect(function()
+		if btn.BackgroundColor3 ~= buttonStates.playing and btn.BackgroundColor3 ~= buttonStates.selected then
+			tween(btn, TweenInfo.new(0.15), { BackgroundColor3 = buttonStates.hover }):Play()
+		end
+	end)
+
+	btn.MouseLeave:Connect(function()
+		if btn.BackgroundColor3 ~= buttonStates.playing and btn.BackgroundColor3 ~= buttonStates.selected then
+			tween(btn, TweenInfo.new(0.15), { BackgroundColor3 = buttonStates.normal }):Play()
+		end
+	end)
+end
+
+-- Runtime & playback
+local currentTabName = nil
+local tabButtons = {}
+local animationButtons = {}
+local searchAnimationButtons = {}
+local selectedAnim = nil
+
+local currentTrack = nil
+local currentConnections = {}
+local currentMeta = nil
+local currentlyPlayingButton = nil
+
+local function resetHipHeight()
+	local char = character or player.Character
+	if not char then
+		originalHipHeight = nil
+		return
+	end
+	local humanoid = char:FindFirstChildOfClass("Humanoid")
+	if humanoid and originalHipHeight ~= nil then
+		pcall(function()
+			humanoid.HipHeight = originalHipHeight
+		end)
+	end
+	originalHipHeight = nil
+end
+
+local function cleanupCurrent()
+	if currentTrack then
+		pcall(function() currentTrack:Stop(0) end)
+	end
+	for _, disconnect in ipairs(currentConnections) do
+		pcall(function() disconnect() end)
+	end
+	currentConnections = {}
+	currentTrack = nil
+	currentMeta = nil
+
+	if currentlyPlayingButton then
+		currentlyPlayingButton.BackgroundColor3 = buttonStates.normal
+		currentlyPlayingButton.TextColor3 = Theme.Text
+		currentlyPlayingButton = nil
 	end
 
-	local function stopIdleTrack(fadeTime)
-		stopTrack(idleTrack, fadeTime)
-		idleTrack = nil
-	end
-
-	local function getRigScale()
-		return Character:GetScale()
-	end
-
-	local function getIdleCount()
-		if animTable.idle and animTable.idle.count then
-			return animTable.idle.count
+	for _, btnList in pairs(animationButtons) do
+		if type(btnList) == "table" then
+			for _, btn in ipairs(btnList) do
+				if btn.BackgroundColor3 == buttonStates.playing then
+					btn.BackgroundColor3 = buttonStates.normal
+					btn.TextColor3 = Theme.Text
+				end
+			end
 		end
-		return 0
+	end
+	for _, btn in ipairs(searchAnimationButtons) do
+		if btn.BackgroundColor3 == buttonStates.playing then
+			btn.BackgroundColor3 = buttonStates.normal
+			btn.TextColor3 = Theme.Text
+		end
 	end
 
-	local function pickRandomIdleIndex(exceptIndex)
-		local count = getIdleCount()
-		if count <= 1 then
-			return 1
-		end
+	resetHipHeight()
+end
 
-		local chosen = exceptIndex or 0
-		while chosen == exceptIndex do
-			chosen = math.random(1, count)
-		end
-		return chosen
+local function getAnimator()
+	local char = character or player.Character
+	if not char then return nil end
+	local humanoid = char:FindFirstChildOfClass("Humanoid")
+	if not humanoid then return nil end
+	local animController = humanoid:FindFirstChildOfClass("Animator")
+	if not animController then
+		animController = Instance.new("Animator")
+		animController.Parent = humanoid
+	end
+	return animController
+end
+
+local function playAnimation(animId, startTime, endTime, button, hipOffset, pingpong, speed)
+	if button == currentlyPlayingButton and currentTrack then
+		cleanupCurrent()
+		return
 	end
 
-	local function configureAnimationSet(name, fileList)
-		if animTable[name] ~= nil then
-			for _, connection in ipairs(animTable[name].connections or {}) do
+	if currentTrack then
+		for _, disconnect in ipairs(currentConnections) do
+			pcall(function() disconnect() end)
+		end
+		currentConnections = {}
+		pcall(function() currentTrack:Stop(0) end)
+		currentTrack = nil
+		currentMeta = nil
+
+		if currentlyPlayingButton then
+			currentlyPlayingButton.BackgroundColor3 = buttonStates.normal
+			currentlyPlayingButton.TextColor3 = Theme.Text
+			currentlyPlayingButton = nil
+		end
+		resetHipHeight()
+	end
+
+	animator = getAnimator()
+	if not animator then
+		warn("[Seximation] No animator/humanoid available.")
+		return
+	end
+
+	local anim = Instance.new("Animation")
+	anim.AnimationId = animId
+	pcall(function() anim.Priority = Enum.AnimationPriority.Action end)
+
+	local ok, track = pcall(function() return animator:LoadAnimation(anim) end)
+	if not ok or not track then
+		warn("[Seximation] Failed to load animation:", animId)
+		anim:Destroy()
+		return
+	end
+
+	pcall(function()
+		if track.Priority then
+			track.Priority = Enum.AnimationPriority.Action
+		end
+	end)
+
+	currentTrack = track
+	currentlyPlayingButton = button
+	currentMeta = {
+		animationId = animId,
+		start = startTime,
+		finish = endTime,
+		looping = true,
+		pingpong = pingpong,
+		speed = speed or 1,
+	}
+
+	if button then
+		button.BackgroundColor3 = buttonStates.playing
+		button.TextColor3 = Color3.fromRGB(28, 22, 24)
+	end
+
+	if hipOffset ~= nil then
+		local char = character or player.Character
+		if char then
+			local humanoid = char:FindFirstChildOfClass("Humanoid")
+			if humanoid then
+				if originalHipHeight == nil then
+					originalHipHeight = humanoid.HipHeight
+				end
+				local clamped = math.clamp(tonumber(hipOffset) or 0, -5, 5)
 				pcall(function()
-					connection:Disconnect()
+					humanoid.HipHeight = originalHipHeight + clamped
 				end)
 			end
 		end
+	end
 
-		animTable[name] = {}
-		animTable[name].count = 0
-		animTable[name].totalWeight = 0
-		animTable[name].connections = {}
+	local actualStart = startTime or 0
+	local actualEnd = endTime or (track.Length or 9999)
+	if actualEnd <= actualStart then
+		warn("[Seximation] Invalid segment: end time must be greater than start time")
+		cleanupCurrent()
+		return
+	end
 
-		local allowCustomAnimations = true
-		pcall(function()
-			allowCustomAnimations = game:GetService("StarterPlayer").AllowCustomAnimations
+	track.Looped = true
+	track:Play()
+	track.TimePosition = actualStart
+
+	local speedFactor = speed or 1
+
+	if pingpong then
+		local direction = 1
+		track:AdjustSpeed(direction * speedFactor)
+
+		local heartbeatConn
+		heartbeatConn = RunService.Heartbeat:Connect(function()
+			if not track or not track.IsPlaying then
+				return
+			end
+			local okPos, currentPos = pcall(function() return track.TimePosition end)
+			if not okPos then return end
+
+			if direction == 1 and currentPos >= actualEnd then
+				direction = -1
+				track:AdjustSpeed(direction * speedFactor)
+				track.TimePosition = actualEnd
+			elseif direction == -1 and currentPos <= actualStart then
+				direction = 1
+				track:AdjustSpeed(direction * speedFactor)
+				track.TimePosition = actualStart
+			end
 		end)
 
-		local config = script:FindFirstChild(name)
-		if allowCustomAnimations and config ~= nil then
-			table.insert(animTable[name].connections, config.ChildAdded:Connect(function()
-				configureAnimationSet(name, fileList)
-			end))
-			table.insert(animTable[name].connections, config.ChildRemoved:Connect(function()
-				configureAnimationSet(name, fileList)
-			end))
+		table.insert(currentConnections, function()
+			if heartbeatConn and heartbeatConn.Connected then
+				heartbeatConn:Disconnect()
+			end
+		end)
+	else
+		track:AdjustSpeed(speedFactor)
+		local heartbeatConn
+		heartbeatConn = RunService.Heartbeat:Connect(function()
+			if not track or not track.IsPlaying then
+				return
+			end
+			local okPos, currentPos = pcall(function() return track.TimePosition end)
+			if not okPos then return end
 
-			for _, childPart in pairs(config:GetChildren()) do
-				if childPart:IsA("Animation") then
-					local newWeight = 1
-					local weightObject = childPart:FindFirstChild("Weight")
-					if weightObject ~= nil then
-						newWeight = weightObject.Value
-					end
+			if currentPos >= actualEnd then
+				track.TimePosition = actualStart
+			end
+		end)
 
-					animTable[name].count += 1
-					local idx = animTable[name].count
-					animTable[name][idx] = {
-						anim = childPart,
-						weight = newWeight,
-					}
-					animTable[name].totalWeight += newWeight
+		table.insert(currentConnections, function()
+			if heartbeatConn and heartbeatConn.Connected then
+				heartbeatConn:Disconnect()
+			end
+		end)
+	end
 
-					table.insert(animTable[name].connections, childPart.Changed:Connect(function()
-						configureAnimationSet(name, fileList)
-					end))
-					table.insert(animTable[name].connections, childPart.ChildAdded:Connect(function()
-						configureAnimationSet(name, fileList)
-					end))
-					table.insert(animTable[name].connections, childPart.ChildRemoved:Connect(function()
-						configureAnimationSet(name, fileList)
-					end))
+	local stoppedConn
+	stoppedConn = track.Stopped:Connect(function()
+		cleanupCurrent()
+	end)
+	table.insert(currentConnections, function()
+		if stoppedConn and stoppedConn.Connected then
+			stoppedConn:Disconnect()
+		end
+	end)
+end
+
+-- Search
+local function performSearch(searchText)
+	searchText = string.lower(searchText)
+	for _, btn in ipairs(searchAnimationButtons) do
+		btn:Destroy()
+	end
+	searchAnimationButtons = {}
+
+	if searchText == "" then
+		searchContent.Visible = false
+		if currentTabName then
+			for _, child in ipairs(tabContentFolder:GetChildren()) do
+				if child:IsA("Frame") and child.Name == currentTabName .. "_Content" then
+					child.Visible = true
 				end
 			end
 		end
+		return
+	end
 
-		if animTable[name].count <= 0 then
-			for idx, anim in pairs(fileList) do
-				animTable[name][idx] = {}
-				animTable[name][idx].anim = Instance.new("Animation")
-				animTable[name][idx].anim.Name = name
-				animTable[name][idx].anim.AnimationId = anim.id
-				animTable[name][idx].weight = anim.weight
-				animTable[name].count += 1
-				animTable[name].totalWeight += anim.weight
-			end
+	for _, child in ipairs(tabContentFolder:GetChildren()) do
+		if child:IsA("Frame") then
+			child.Visible = false
 		end
+	end
+	searchContent.Visible = true
 
-		for _, animType in pairs(animTable) do
-			for idx = 1, animType.count do
-				local animationId = animType[idx].anim.AnimationId
-				if PreloadedAnims[animationId] == nil then
-					pcall(function()
-						Animator:LoadAnimation(animType[idx].anim)
-					end)
-					PreloadedAnims[animationId] = true
+	local allAnimations = {}
+	for _, tab in ipairs(tabConfig) do
+		for _, anim in ipairs(tab.animations or {}) do
+			table.insert(allAnimations, {
+				data = anim,
+				tabName = tab.name
+			})
+		end
+	end
+
+	local searchResults = {}
+	for _, animData in ipairs(allAnimations) do
+		local animName = string.lower(animData.data.name or "")
+		if string.find(animName, searchText, 1, true) then
+			table.insert(searchResults, animData)
+		end
+	end
+
+	for i, result in ipairs(searchResults) do
+		local anim = result.data
+		local btn = Instance.new("TextButton")
+		btn.Name = ("SearchAnimBtn_%d"):format(i)
+		styleButton(btn)
+		btn.Text = anim.name .. " (" .. result.tabName .. ")"
+		btn.Parent = searchScroll
+
+		local meta = {
+			rawId = anim.id,
+			name = anim.name or btn.Text,
+			start = anim.start,
+			finish = anim.finish,
+			hipHeight = anim.hipHeight,
+			pingpong = anim.pingpong,
+			speed = anim.speed or 1,
+		}
+
+		table.insert(searchAnimationButtons, btn)
+
+		btn.MouseButton1Click:Connect(function()
+			for _, b in ipairs(searchAnimationButtons) do
+				if b ~= btn then
+					b.BackgroundColor3 = buttonStates.normal
+					b.TextColor3 = Theme.Text
 				end
 			end
-		end
+
+			local normalized = normalizeAnimationId(meta.rawId)
+			if not normalized then
+				warn("[Seximation] Invalid animation id:", meta.rawId)
+				return
+			end
+			playAnimation(normalized, meta.start, meta.finish, btn, meta.hipHeight, meta.pingpong, meta.speed)
+		end)
 	end
 
-	local function findExistingAnimationInSet(set, anim)
-		if set == nil or anim == nil then
-			return 0
-		end
+	local function updateSearchCanvas()
+		local total = searchListLayout.AbsoluteContentSize.Y
+		searchScroll.CanvasSize = UDim2.new(0, 0, 0, total + 12)
+	end
+	updateSearchCanvas()
+end
 
-		for idx = 1, set.count do
-			if set[idx].anim.AnimationId == anim.AnimationId then
-				return idx
+searchBox:GetPropertyChangedSignal("Text"):Connect(function()
+	performSearch(searchBox.Text)
+end)
+
+-- Create tab content
+local function createTabContent(tabName, animations)
+	local content = Instance.new("Frame")
+	content.Name = tabName .. "_Content"
+	content.Size = UDim2.new(1, 0, 1, 0)
+	content.BackgroundTransparency = 1
+	content.Parent = tabContentFolder
+	content.Visible = false
+
+	local scroll = Instance.new("ScrollingFrame")
+	scroll.Size = UDim2.new(1, -14, 1, -14)
+	scroll.Position = UDim2.new(0, 7, 0, 7)
+	scroll.BackgroundTransparency = 1
+	scroll.BorderSizePixel = 0
+	scroll.Parent = content
+	scroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+	scroll.ScrollBarThickness = 6
+	scroll.ScrollingDirection = Enum.ScrollingDirection.Y
+
+	local listLayout = Instance.new("UIListLayout")
+	listLayout.Parent = scroll
+	listLayout.SortOrder = Enum.SortOrder.LayoutOrder
+	listLayout.Padding = UDim.new(0, 8)
+
+	animationButtons[tabName] = {}
+
+	local function buildButtons()
+		for _, child in ipairs(scroll:GetChildren()) do
+			if child ~= listLayout and not (child:IsA("UITextSizeConstraint")) then
+				child:Destroy()
 			end
 		end
+		animationButtons[tabName] = {}
 
-		return 0
-	end
+		for i, anim in ipairs(animations or {}) do
+			local btn = Instance.new("TextButton")
+			btn.Name = ("AnimBtn_%d"):format(i)
+			styleButton(btn)
+			btn.Text = (anim.name or ("Anim " .. tostring(i)))
+			btn.Parent = scroll
 
-	local function rollAnimation(animName)
-		local roll = math.random(1, animTable[animName].totalWeight)
-		local idx = 1
-		while roll > animTable[animName][idx].weight do
-			roll -= animTable[animName][idx].weight
-			idx += 1
-		end
-		return idx
-	end
+			local meta = {
+				rawId = anim.id,
+				name = anim.name or btn.Text,
+				start = anim.start,
+				finish = anim.finish,
+				hipHeight = anim.hipHeight,
+				pingpong = anim.pingpong,
+				speed = anim.speed or 1,
+			}
 
-	local function getHeightScale()
-		if Humanoid then
-			if not Humanoid.AutomaticScalingEnabled then
-				return getRigScale()
-			end
+			table.insert(animationButtons[tabName], btn)
 
-			local scale = Humanoid.HipHeight / HumanoidHipHeight
-			if AnimationSpeedDampeningObject == nil then
-				AnimationSpeedDampeningObject = script:FindFirstChild("ScaleDampeningPercent")
-			end
-			if AnimationSpeedDampeningObject ~= nil then
-				scale = 1 + (Humanoid.HipHeight - HumanoidHipHeight) * AnimationSpeedDampeningObject.Value / HumanoidHipHeight
-			end
-			return scale
-		end
-		return getRigScale()
-	end
-
-	local function rootMotionCompensation(speed)
-		local speedScaled = speed * 1.25
-		local heightScale = getHeightScale()
-		return speedScaled / heightScale
-	end
-
-	local smallButNotZero = 0.0001
-	local function setRunSpeed(speed)
-		local normalizedWalkSpeed = 0.5
-		local normalizedRunSpeed = 1
-		local runSpeed = rootMotionCompensation(speed)
-
-		local walkAnimationWeight = smallButNotZero
-		local runAnimationWeight = smallButNotZero
-		local timeWarp = 1
-
-		if runSpeed <= normalizedWalkSpeed then
-			walkAnimationWeight = 1
-			timeWarp = runSpeed / normalizedWalkSpeed
-		elseif runSpeed < normalizedRunSpeed then
-			local fadeInRun = (runSpeed - normalizedWalkSpeed) / (normalizedRunSpeed - normalizedWalkSpeed)
-			walkAnimationWeight = 1 - fadeInRun
-			runAnimationWeight = fadeInRun
-		else
-			timeWarp = runSpeed / normalizedRunSpeed
-			runAnimationWeight = 1
-		end
-
-		if currentAnimTrack then
-			currentAnimTrack:AdjustWeight(walkAnimationWeight)
-			currentAnimTrack:AdjustSpeed(timeWarp)
-		end
-		if runAnimTrack then
-			runAnimTrack:AdjustWeight(runAnimationWeight)
-			runAnimTrack:AdjustSpeed(timeWarp)
-		end
-	end
-
-	local function setAnimationSpeed(speed)
-		if currentAnim == "walk" then
-			setRunSpeed(speed)
-		else
-			if speed ~= currentAnimSpeed and currentAnimTrack then
-				currentAnimSpeed = speed
-				currentAnimTrack:AdjustSpeed(currentAnimSpeed)
-			end
-		end
-	end
-
-	local function playIdle(index, transitionTime)
-		local idleSet = animTable.idle
-		if not idleSet or idleSet.count <= 0 then
-			return
-		end
-
-		index = math.clamp(index or 1, 1, idleSet.count)
-		currentIdleIndex = index
-
-		-- Stop any non-idle main animation and switch to the selected idle
-		stopMainAnimationTracks(transitionTime or 0.15)
-		stopIdleTrack(0)
-
-		local anim = idleSet[index].anim
-		idleTrack = Animator:LoadAnimation(anim)
-		idleTrack.Priority = Enum.AnimationPriority.Core
-		idleTrack.Looped = true
-		idleTrack:Play(transitionTime or 0.15)
-
-		currentAnim = "idle"
-		currentAnimInstance = anim
-		currentAnimTrack = idleTrack
-		currentlyPlayingEmote = false
-	end
-
-	local function setIdleState(shouldIdle, transitionTime)
-		if shouldIdle then
-			if not isIdle or idleTrack == nil or currentAnim ~= "idle" then
-				isIdle = true
-				if nextIdleIndex < 1 or nextIdleIndex > getIdleCount() then
-					nextIdleIndex = math.random(1, math.max(getIdleCount(), 1))
-				end
-				playIdle(nextIdleIndex, transitionTime or 0.15)
-			end
-		else
-			if isIdle then
-				isIdle = false
-				nextIdleIndex = pickRandomIdleIndex(currentIdleIndex)
-				stopIdleTrack(transitionTime or 0.1)
-				currentAnimTrack = nil
-				currentAnimInstance = nil
-				currentAnim = ""
-			end
-		end
-	end
-
-	local function stopCurrentCustomAction(fadeTime, goIdle)
-		if currentCustomAction == nil then
-			return
-		end
-
-		local action = currentCustomAction
-		currentCustomAction = nil
-
-		action.isActive = false
-		action.ignoreStop = true
-
-		-- Clean up ping-pong heartbeat if present
-		if action.pingPongConnection then
-			action.pingPongConnection:Disconnect()
-			action.pingPongConnection = nil
-		end
-
-		if action.track then
-			local track = action.track
-			action.track = nil
-			action.animation = nil
-
-			pcall(function()
-				track:Stop(fadeTime or 0)
-			end)
-			pcall(function()
-				track:Destroy()
-			end)
-		end
-
-		action.ignoreStop = false
-
-		if goIdle and Character.Parent ~= nil and Humanoid.Parent ~= nil then
-			setIdleState(true, fadeTime or 0.15)
-		end
-	end
-
-	local function playCustomAction(action, transitionTime)
-		if action == nil or Humanoid.Parent == nil then
-			return
-		end
-
-		if currentCustomAction and currentCustomAction ~= action then
-			stopCurrentCustomAction(transitionTime or 0, false)
-		end
-
-		if currentCustomAction == action and action.track then
-			pcall(function()
-				action.track:Stop(0)
-				action.track:Destroy()
-			end)
-			action.track = nil
-			action.animation = nil
-			action.isActive = false
-			currentCustomAction = nil
-		end
-
-		stopMainAnimationTracks(transitionTime or 0)
-		stopIdleTrack(transitionTime or 0)
-
-		local anim = Instance.new("Animation")
-		anim.Name = action.name
-		anim.AnimationId = action.animationId
-
-		local track = Animator:LoadAnimation(anim)
-		track.Priority = action.priority or Enum.AnimationPriority.Action
-
-		action.animation = anim
-		action.track = track
-		action.isActive = true
-		action.ignoreStop = false
-		currentCustomAction = action
-
-		currentAnim = action.name
-		currentAnimInstance = anim
-		currentAnimTrack = track
-		currentlyPlayingEmote = false
-		currentAnimSpeed = 1.0
-		isIdle = false
-
-		-- Special ping-pong handling for Splits (if startTime & endTime are provided)
-		local isPingPong = action.startTime and action.endTime
-
-		if isPingPong then
-			track.Looped = true
-			track:Play(transitionTime or 0.1)
-			track.TimePosition = action.startTime
-
-			local direction = 1
-			local speed = 1
-			local heartbeatConn
-
-			heartbeatConn = RunService.Heartbeat:Connect(function()
-				if not track or not track.IsPlaying then
-					-- If the track stops for any reason, clean up
-					if heartbeatConn then heartbeatConn:Disconnect() end
-					if currentCustomAction == action then
-						stopCurrentCustomAction(0, true)
-					end
+			btn.MouseButton1Click:Connect(function()
+				if btn == currentlyPlayingButton then
+					cleanupCurrent()
 					return
 				end
 
-				local pos = track.TimePosition
-				if direction == 1 and pos >= action.endTime then
-					direction = -1
-					track:AdjustSpeed(direction * speed)
-					track.TimePosition = action.endTime
-				elseif direction == -1 and pos <= action.startTime then
-					direction = 1
-					track:AdjustSpeed(direction * speed)
-					track.TimePosition = action.startTime
+				for _, b in ipairs(animationButtons[tabName]) do
+					if b ~= btn then
+						b.BackgroundColor3 = buttonStates.normal
+						b.TextColor3 = Theme.Text
+					end
 				end
+
+				local normalized = normalizeAnimationId(meta.rawId)
+				if not normalized then
+					warn("[Seximation] Invalid animation id:", meta.rawId)
+					return
+				end
+				playAnimation(normalized, meta.start, meta.finish, btn, meta.hipHeight, meta.pingpong, meta.speed)
 			end)
 
-			action.pingPongConnection = heartbeatConn
-			action.pingPongDirection = direction
-			action.pingPongSpeed = speed
-		else
-			-- Normal playback mode
-			track.Looped = (action.mode ~= "press") and (action.looped == true or action.looped == nil or action.mode == "hold" or action.mode == "toggle") or false
-			track:Play(transitionTime or 0.1)
+			btn.MouseButton2Click:Connect(function()
+				local modalBg = Instance.new("TextButton")
+				modalBg.Size = UDim2.new(1, 0, 1, 0)
+				modalBg.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+				modalBg.BackgroundTransparency = 0.45
+				modalBg.Text = ""
+				modalBg.AutoButtonColor = false
+				modalBg.Parent = screenGui
+				modalBg.ZIndex = 50
+
+				local modal = Instance.new("Frame")
+				modal.Size = UDim2.new(0, 340, 0, 214)
+				modal.Position = UDim2.new(0.5, -170, 0.5, -107)
+				modal.AnchorPoint = Vector2.new(0.5, 0.5)
+				modal.BackgroundColor3 = Theme.Panel
+				modal.BorderSizePixel = 0
+				modal.Parent = modalBg
+				modal.ZIndex = 51
+				softPanel(modal, 16)
+
+				local mg = Instance.new("UIGradient")
+				mg.Color = ColorSequence.new({
+					ColorSequenceKeypoint.new(0, Color3.fromRGB(27, 27, 33)),
+					ColorSequenceKeypoint.new(1, Color3.fromRGB(19, 19, 24)),
+				})
+				mg.Rotation = 90
+				mg.Parent = modal
+
+				local title = Instance.new("TextLabel")
+				title.Size = UDim2.new(1, -20, 0, 22)
+				title.Position = UDim2.new(0, 10, 0, 10)
+				title.BackgroundTransparency = 1
+				title.Text = "Edit animation"
+				title.Font = Enum.Font.GothamBold
+				title.TextSize = 14
+				title.TextColor3 = Theme.Text
+				title.Parent = modal
+				title.ZIndex = 52
+
+				local function makeModalLabel(text, y, width)
+					local l = Instance.new("TextLabel")
+					l.Size = UDim2.new(0, width or 92, 0, 18)
+					l.Position = UDim2.new(0, 10, 0, y)
+					l.BackgroundTransparency = 1
+					l.Text = text
+					l.Font = Enum.Font.Gotham
+					l.TextSize = 12
+					l.TextColor3 = Theme.Muted
+					l.Parent = modal
+					l.ZIndex = 52
+					return l
+				end
+
+				local function makeModalBox(text, y, x, width)
+					local b = Instance.new("TextBox")
+					b.Size = UDim2.new(0, width or 208, 0, 22)
+					b.Position = UDim2.new(0, x or 102, 0, y)
+					b.ClearTextOnFocus = false
+					b.Text = text or ""
+					b.Font = Enum.Font.Gotham
+					b.TextSize = 12
+					b.TextColor3 = Theme.Text
+					b.BackgroundColor3 = Theme.Surface
+					b.Parent = modal
+					b.ZIndex = 52
+					softInput(b, { BackgroundColor3 = Theme.Surface, StrokeTransparency = 0.9, TextSize = 12 })
+					return b
+				end
+
+				makeModalLabel("Name:", 38, 84)
+				local nameBox = makeModalBox(anim.name or "", 36, 102, 226)
+
+				makeModalLabel("Tab:", 68, 84)
+				local tabBox = makeModalBox(tabName, 66, 102, 226)
+				tabBox.PlaceholderText = "Type tab name (existing or new)"
+				tabBox.TextColor3 = Theme.Text
+
+				makeModalLabel("Ping-pong:", 98, 84)
+				local pingpongCheck = Instance.new("TextButton")
+				pingpongCheck.Size = UDim2.new(0, 24, 0, 24)
+				pingpongCheck.Position = UDim2.new(0, 102, 0, 94)
+				pingpongCheck.Text = anim.pingpong and "✓" or ""
+				pingpongCheck.Font = Enum.Font.GothamBold
+				pingpongCheck.TextSize = 14
+				pingpongCheck.TextColor3 = Theme.Text
+				pingpongCheck.Parent = modal
+				pingpongCheck.ZIndex = 52
+				softButton(pingpongCheck, {
+					CornerRadius = 8,
+					BackgroundColor3 = anim.pingpong and Theme.Accent or Theme.Surface,
+					HoverColor3 = anim.pingpong and Theme.AccentHover or Theme.Surface2,
+					TextColor3 = anim.pingpong and Color3.fromRGB(22, 20, 22) or Theme.Text,
+					TextSize = 14,
+				})
+				local pingEnabled = anim.pingpong and true or false
+
+				pingpongCheck.MouseButton1Click:Connect(function()
+					pingEnabled = not pingEnabled
+					pingpongCheck.Text = pingEnabled and "✓" or ""
+					pingpongCheck.BackgroundColor3 = pingEnabled and Theme.Accent or Theme.Surface
+					pingpongCheck.TextColor3 = pingEnabled and Color3.fromRGB(22, 20, 22) or Theme.Text
+				end)
+
+				makeModalLabel("Speed:", 128, 84)
+				local speedBox = makeModalBox(tostring(anim.speed or 1), 126, 102, 80)
+				speedBox.PlaceholderText = "0.1 - 3"
+
+				local saveBtn = Instance.new("TextButton")
+				saveBtn.Size = UDim2.new(0, 78, 0, 26)
+				saveBtn.Position = UDim2.new(1, -86, 1, -36)
+				saveBtn.Text = "Save"
+				saveBtn.Font = Enum.Font.GothamBold
+				saveBtn.TextSize = 12
+				saveBtn.TextColor3 = Color3.fromRGB(22, 20, 22)
+				saveBtn.Parent = modal
+				saveBtn.ZIndex = 52
+				softButton(saveBtn, {
+					CornerRadius = 10,
+					BackgroundColor3 = Theme.Accent,
+					HoverColor3 = Theme.AccentHover,
+					TextColor3 = Color3.fromRGB(22, 20, 22),
+				})
+
+				local delBtn = Instance.new("TextButton")
+				delBtn.Size = UDim2.new(0, 78, 0, 26)
+				delBtn.Position = UDim2.new(0, 10, 1, -36)
+				delBtn.Text = "Delete"
+				delBtn.Font = Enum.Font.GothamBold
+				delBtn.TextSize = 12
+				delBtn.TextColor3 = Theme.Text
+				delBtn.Parent = modal
+				delBtn.ZIndex = 52
+				softButton(delBtn, {
+					CornerRadius = 10,
+					BackgroundColor3 = Theme.Danger,
+					HoverColor3 = Theme.DangerHover,
+					TextColor3 = Theme.Text,
+				})
+
+				local closeModal = function()
+					modalBg:Destroy()
+				end
+
+				modalBg.MouseButton1Click:Connect(closeModal)
+
+				saveBtn.MouseButton1Click:Connect(function()
+					local newName = nameBox.Text or anim.name or ""
+					local newTab = tabBox.Text or tabName
+					local newSpeed = tonumber(speedBox.Text)
+					if not newSpeed then newSpeed = 1 end
+					newSpeed = math.clamp(newSpeed, 0.1, 3)
+
+					local srcIdx = findTabIndexByName(tabName)
+					if not srcIdx then closeModal(); return end
+
+					local srcTab = tabConfig[srcIdx]
+					local animIdx = nil
+					for ii, a in ipairs(srcTab.animations or {}) do
+						if a.id == anim.id then animIdx = ii; break end
+					end
+					if not animIdx then closeModal(); return end
+
+					srcTab.animations[animIdx].name = newName
+					srcTab.animations[animIdx].pingpong = pingEnabled
+					srcTab.animations[animIdx].speed = newSpeed
+
+					if newTab ~= tabName then
+						local movingAnim = srcTab.animations[animIdx]
+						table.remove(srcTab.animations, animIdx)
+						local dstIdx = ensureTabExists(newTab)
+						table.insert(tabConfig[dstIdx].animations, movingAnim)
+					end
+
+					writeLocalFile(serializeConfig(tabConfig))
+					refreshTabsUI()
+					closeModal()
+				end)
+
+				delBtn.MouseButton1Click:Connect(function()
+					local srcIdx = findTabIndexByName(tabName)
+					if not srcIdx then closeModal(); return end
+					local srcTab = tabConfig[srcIdx]
+					for ii, a in ipairs(srcTab.animations or {}) do
+						if a.id == anim.id then
+							table.remove(srcTab.animations, ii)
+							break
+						end
+					end
+					writeLocalFile(serializeConfig(tabConfig))
+					refreshTabsUI()
+					closeModal()
+				end)
+			end)
 		end
 
-		local stoppedConnection
-		stoppedConnection = track.Stopped:Connect(function()
-			if currentCustomAction ~= action then
-				return
-			end
-			if action.ignoreStop then
-				return
-			end
+		local function updateCanvas()
+			local total = listLayout.AbsoluteContentSize.Y
+			scroll.CanvasSize = UDim2.new(0, 0, 0, total + 12)
+		end
+		listLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(updateCanvas)
+		updateCanvas()
+	end
 
-			action.isActive = false
-			action.track = nil
-			action.animation = nil
-			currentCustomAction = nil
-			currentAnimTrack = nil
-			currentAnimInstance = nil
-			currentAnim = ""
-			pose = "Standing"
+	buildButtons()
 
-			if action.mode == "press" then
-				setIdleState(true, 0.15)
+	return content, function()
+		for _, t in ipairs(tabConfig) do
+			if t.name == tabName then
+				animations = t.animations or {}
+				break
+			end
+		end
+		buildButtons()
+	end
+end
+
+local builtTabEntries = {}
+
+local function clearTabsUI()
+	for _, entry in pairs(builtTabEntries) do
+		if entry.button and entry.button.Parent then entry.button:Destroy() end
+		if entry.content and entry.content.Parent then entry.content:Destroy() end
+	end
+	builtTabEntries = {}
+	tabButtons = {}
+	animationButtons = {}
+	currentTabName = nil
+end
+
+local function buildTabsUI()
+	clearTabsUI()
+
+	for idx, tab in ipairs(tabConfig) do
+		local tabName = tab.name or ("Tab" .. idx)
+		local tabBtn = Instance.new("TextButton")
+		tabBtn.Name = ("TabBtn_" .. tabName)
+		tabBtn.Size = UDim2.new(1, -12, 0, 36)
+		tabBtn.BackgroundColor3 = Theme.Surface
+		tabBtn.BorderSizePixel = 0
+		tabBtn.Font = Enum.Font.Gotham
+		tabBtn.Text = tabName
+		tabBtn.TextSize = 13
+		tabBtn.TextColor3 = Theme.Text
+		tabBtn.Parent = tabsFrame
+		tabBtn.LayoutOrder = idx
+		softButton(tabBtn, {
+			CornerRadius = 10,
+			BackgroundColor3 = Theme.Surface,
+			HoverColor3 = Theme.Surface2,
+			TextColor3 = Theme.Text,
+			StrokeTransparency = 0.9,
+			TextSize = 13,
+		})
+
+		table.insert(tabButtons, tabBtn)
+
+		local content, refreshFn = createTabContent(tabName, tab.animations)
+		builtTabEntries[tabName] = { button = tabBtn, content = content, refresh = refreshFn }
+
+		tabBtn.MouseButton1Click:Connect(function()
+			if currentTabName == tabName then return end
+			currentTabName = tabName
+			for _, tbtn in ipairs(tabButtons) do
+				setSelected(tbtn, false)
+			end
+			setSelected(tabBtn, true)
+			searchContent.Visible = false
+			searchBox.Text = ""
+			for _, child in ipairs(tabContentFolder:GetChildren()) do
+				if child:IsA("Frame") then
+					child.Visible = (child == content)
+				end
 			end
 		end)
-		table.insert(connections, stoppedConnection)
-	end
 
-	local function playAnimation(animName, transitionTime, humanoid)
-		if currentCustomAction and animName ~= "idle" then
-			return
-		end
-
-		if animName == "idle" then
-			setIdleState(true, transitionTime)
-			return
-		end
-
-		local idx = rollAnimation(animName)
-		local anim = animTable[animName][idx].anim
-
-		if anim ~= currentAnimInstance then
-			-- Leaving idle? stop it cleanly and pick a new next idle for later.
-			if currentAnim == "idle" then
-				setIdleState(false, transitionTime)
-			end
-
-			if currentAnimTrack ~= nil then
-				stopTrack(currentAnimTrack, transitionTime)
-				currentAnimTrack = nil
-			end
-
-			if runAnimTrack ~= nil then
-				stopTrack(runAnimTrack, transitionTime)
-				runAnimTrack = nil
-			end
-
-			currentAnimSpeed = 1.0
-			currentAnimTrack = humanoid:LoadAnimation(anim)
-			currentAnimTrack.Priority = Enum.AnimationPriority.Core
-			currentAnimTrack:Play(transitionTime)
-
-			currentAnim = animName
-			currentAnimInstance = anim
-
-			if currentAnimKeyframeHandler ~= nil then
-				pcall(function()
-					currentAnimKeyframeHandler:Disconnect()
-				end)
-			end
-			currentAnimKeyframeHandler = currentAnimTrack.KeyframeReached:Connect(function(frameName)
-				if frameName == "End" then
-					if currentAnim == "walk" then
-						if runAnimTrack and runAnimTrack.Looped ~= true then
-							runAnimTrack.TimePosition = 0.0
-						end
-						if currentAnimTrack and currentAnimTrack.Looped ~= true then
-							currentAnimTrack.TimePosition = 0.0
-						end
-					else
-						local repeatAnim = currentAnim
-
-						if emoteNames[repeatAnim] ~= nil and emoteNames[repeatAnim] == false then
-							repeatAnim = "idle"
-						end
-
-						if currentlyPlayingEmote then
-							if currentAnimTrack and currentAnimTrack.Looped then
-								return
-							end
-							repeatAnim = "idle"
-							currentlyPlayingEmote = false
-						end
-
-						if repeatAnim == "idle" then
-							setIdleState(true, 0.15)
-						else
-							local animSpeed = currentAnimSpeed
-							playAnimation(repeatAnim, 0.15, humanoid)
-							setAnimationSpeed(animSpeed)
-						end
-					end
-				end
-			end)
-
-			if animName == "walk" then
-				local runAnimName = "run"
-				local runIdx = rollAnimation(runAnimName)
-
-				runAnimTrack = humanoid:LoadAnimation(animTable[runAnimName][runIdx].anim)
-				runAnimTrack.Priority = Enum.AnimationPriority.Core
-				runAnimTrack:Play(transitionTime)
-
-				if runAnimKeyframeHandler ~= nil then
-					pcall(function()
-						runAnimKeyframeHandler:Disconnect()
-					end)
-				end
-				runAnimKeyframeHandler = runAnimTrack.KeyframeReached:Connect(function(frameName)
-					if frameName == "End" then
-						if runAnimTrack.Looped ~= true then
-							runAnimTrack.TimePosition = 0.0
-						end
-						if currentAnimTrack and currentAnimTrack.Looped ~= true then
-							currentAnimTrack.TimePosition = 0.0
-						end
-					end
-				end)
-			end
-		end
-	end
-
-	local function playEmote(emoteAnim, transitionTime, humanoid)
-		if currentCustomAction then
-			return
-		end
-
-		stopIdleTrack(transitionTime)
-		stopMainAnimationTracks(transitionTime)
-
-		currentAnimTrack = humanoid:LoadAnimation(emoteAnim)
-		currentAnimTrack.Priority = Enum.AnimationPriority.Core
-		currentAnimTrack:Play(transitionTime)
-
-		currentAnim = emoteAnim.Name
-		currentAnimInstance = emoteAnim
-		currentlyPlayingEmote = true
-	end
-
-	local function stopAllAnimations()
-		local oldAnim = currentAnim
-
-		if currentCustomAction then
-			currentCustomAction.isActive = false
-			currentCustomAction.ignoreStop = true
-			currentCustomAction = nil
-		end
-
-		if emoteNames[oldAnim] ~= nil and emoteNames[oldAnim] == false then
-			oldAnim = "idle"
-		end
-
-		if currentlyPlayingEmote then
-			oldAnim = "idle"
-			currentlyPlayingEmote = false
-		end
-
-		currentAnim = ""
-		currentAnimInstance = nil
-
-		if currentAnimKeyframeHandler ~= nil then
-			pcall(function()
-				currentAnimKeyframeHandler:Disconnect()
-			end)
-			currentAnimKeyframeHandler = nil
-		end
-
-		if runAnimKeyframeHandler ~= nil then
-			pcall(function()
-				runAnimKeyframeHandler:Disconnect()
-			end)
-			runAnimKeyframeHandler = nil
-		end
-
-		stopTrack(currentAnimTrack, 0)
-		stopTrack(runAnimTrack, 0)
-		stopTrack(idleTrack, 0)
-
-		currentAnimTrack = nil
-		runAnimTrack = nil
-		idleTrack = nil
-
-		return oldAnim
-	end
-
-	local function onRunning(speed)
-		if currentCustomAction then
-			return
-		end
-
-		local heightScale = getHeightScale()
-
-		-- Adjust the walking speed if a ControllerManager is being used.
-		if Character:FindFirstChildOfClass("ControllerManager") and Humanoid.EvaluateStateMachine == false then
-			local charGroundSensor = Character:FindFirstChildOfClass("ControllerManager").GroundSensor
-			local charControllerManager = Character:FindFirstChildOfClass("ControllerManager")
-			if charGroundSensor ~= nil and charControllerManager ~= nil then
-				local hrp = Humanoid.RootPart
-				local sensedPart = charGroundSensor.SensedPart
-				if sensedPart then
-					local pos = charGroundSensor.HitFrame.Position
-					local floorVel = sensedPart:GetVelocityAtPosition(pos)
-					local assemblyVel = hrp.AssemblyLinearVelocity
-					local relVel = Vector3.new(assemblyVel.X - floorVel.X, 0, assemblyVel.Z - floorVel.Z)
-					local relSpeed = relVel.Magnitude
-					local moveMag = charControllerManager.MovingDirection.Magnitude
-					if moveMag < 0.1 then
-						relSpeed = 0
-						moveMag = 0
-					elseif moveMag > 1.0 then
-						moveMag = 1.0
-					end
-					speed = relSpeed * moveMag
-				end
-			end
-		end
-
-		local movedDuringEmote = currentlyPlayingEmote and Humanoid.MoveDirection == Vector3.new(0, 0, 0)
-		local speedThreshold = movedDuringEmote and (Humanoid.WalkSpeed / heightScale) or 0.75
-
-		if speed > speedThreshold * heightScale then
-			if isIdle then
-				setIdleState(false, 0.1)
-			end
-
-			local scale = 16.0
-			playAnimation("walk", 0.2, Humanoid)
-			setAnimationSpeed(speed / scale)
-			pose = "Running"
-		else
-			setIdleState(true, 0.2)
-			pose = "Standing"
-		end
-	end
-
-	local function onDied()
-		stopCurrentCustomAction(0, false)
-		pose = "Dead"
-	end
-
-	local function onJumping()
-		if currentCustomAction then
-			return
-		end
-		if isIdle then
-			setIdleState(false, 0.1)
-		end
-		playAnimation("jump", 0.1, Humanoid)
-		jumpAnimTime = jumpAnimDuration
-		pose = "Jumping"
-	end
-
-	local function onClimbing(speed)
-		if currentCustomAction then
-			return
-		end
-		if isIdle then
-			setIdleState(false, 0.1)
-		end
-		speed /= getHeightScale()
-		local scale = 5.0
-		playAnimation("climb", 0.1, Humanoid)
-		setAnimationSpeed(speed / scale)
-		pose = "Climbing"
-	end
-
-	local function onGettingUp()
-		pose = "GettingUp"
-	end
-
-	local function onFreeFall()
-		if currentCustomAction then
-			return
-		end
-		if isIdle then
-			setIdleState(false, 0.1)
-		end
-		if jumpAnimTime <= 0 then
-			playAnimation("fall", fallTransitionTime, Humanoid)
-		end
-		pose = "FreeFall"
-	end
-
-	local function onFallingDown()
-		pose = "FallingDown"
-	end
-
-	local function onSeated()
-		if currentCustomAction then
-			return
-		end
-		if isIdle then
-			setIdleState(false, 0.1)
-		end
-		pose = "Seated"
-	end
-
-	local function onPlatformStanding()
-		pose = "PlatformStanding"
-	end
-
-	local function onSwimming(speed)
-		if currentCustomAction then
-			return
-		end
-		if isIdle then
-			setIdleState(false, 0.1)
-		end
-		speed /= getHeightScale()
-		if speed > 1.0 then
-			local scale = 10.0
-			playAnimation("swim", 0.4, Humanoid)
-			setAnimationSpeed(speed / scale)
-			pose = "Swimming"
-		else
-			playAnimation("swimidle", 0.4, Humanoid)
-			pose = "Standing"
-		end
-	end
-
-	local function animateTool()
-		if currentCustomAction then
-			return
-		end
-
-		if toolAnim == "None" then
-			playAnimation("toolnone", toolTransitionTime, Humanoid)
-			if currentAnimTrack then
-				currentAnimTrack.Priority = Enum.AnimationPriority.Idle
-			end
-			return
-		end
-
-		if toolAnim == "Slash" then
-			playAnimation("toolslash", 0, Humanoid)
-			if currentAnimTrack then
-				currentAnimTrack.Priority = Enum.AnimationPriority.Action
-			end
-			return
-		end
-
-		if toolAnim == "Lunge" then
-			playAnimation("toollunge", 0, Humanoid)
-			if currentAnimTrack then
-				currentAnimTrack.Priority = Enum.AnimationPriority.Action
-			end
-			return
-		end
-	end
-
-	local function getToolAnim(tool)
-		for _, c in ipairs(tool:GetChildren()) do
-			if c.Name == "toolanim" and c:IsA("StringValue") then
-				return c
-			end
-		end
-		return nil
-	end
-
-	local function toolKeyFrameReachedFunc(frameName)
-		if frameName == "End" then
-			playToolAnimation(toolAnimName, 0.0, Humanoid)
-		end
-	end
-
-	function playToolAnimation(animName, transitionTime, humanoid, priority)
-		if currentCustomAction then
-			return
-		end
-
-		local idx = rollAnimation(animName)
-		local anim = animTable[animName][idx].anim
-
-		if toolAnimInstance ~= anim then
-			if toolAnimTrack ~= nil then
-				toolAnimTrack:Stop()
-				toolAnimTrack:Destroy()
-				transitionTime = 0
-			end
-
-			toolAnimTrack = humanoid:LoadAnimation(anim)
-			if priority then
-				toolAnimTrack.Priority = priority
-			end
-
-			toolAnimTrack:Play(transitionTime)
-			toolAnimName = animName
-			toolAnimInstance = anim
-
-			if currentToolAnimKeyframeHandler ~= nil then
-				currentToolAnimKeyframeHandler:Disconnect()
-			end
-			currentToolAnimKeyframeHandler = toolAnimTrack.KeyframeReached:Connect(toolKeyFrameReachedFunc)
-		end
-	end
-
-	local function stopToolAnimations()
-		local oldAnim = toolAnimName
-
-		if currentToolAnimKeyframeHandler ~= nil then
-			currentToolAnimKeyframeHandler:Disconnect()
-			currentToolAnimKeyframeHandler = nil
-		end
-
-		toolAnimName = ""
-		toolAnimInstance = nil
-		if toolAnimTrack ~= nil then
-			toolAnimTrack:Stop()
-			toolAnimTrack:Destroy()
-			toolAnimTrack = nil
-		end
-
-		return oldAnim
-	end
-
-	local lastTick = 0
-
-	local function stepAnimate(currentTime)
-		if currentCustomAction then
-			return
-		end
-
-		local deltaTime = currentTime - lastTick
-		lastTick = currentTime
-
-		if jumpAnimTime > 0 then
-			jumpAnimTime -= deltaTime
-		end
-
-		if pose == "FreeFall" and jumpAnimTime <= 0 then
-			playAnimation("fall", fallTransitionTime, Humanoid)
-		elseif pose == "Seated" then
-			playAnimation("sit", 0.5, Humanoid)
-			return
-		elseif pose == "Running" then
-			playAnimation("walk", 0.2, Humanoid)
-		elseif pose == "Dead" or pose == "GettingUp" or pose == "FallingDown" or pose == "Seated" or pose == "PlatformStanding" then
-			stopAllAnimations()
-		end
-
-		local tool = Character:FindFirstChildOfClass("Tool")
-		if tool and tool:FindFirstChild("Handle") then
-			local animStringValueObject = getToolAnim(tool)
-
-			if animStringValueObject then
-				toolAnim = animStringValueObject.Value
-				animStringValueObject.Parent = nil
-				toolAnimTime = currentTime + 0.3
-			end
-
-			if currentTime > toolAnimTime then
-				toolAnimTime = 0
-				toolAnim = "None"
-			end
-
-			animateTool()
-		else
-			stopToolAnimations()
-			toolAnim = "None"
-			toolAnimInstance = nil
-			toolAnimTime = 0
-		end
-	end
-
-	local function getBindingForKeyCode(keyCode)
-		for _, binding in ipairs(customBindings) do
-			if binding.keyCode == keyCode then
-				return binding
-			end
-		end
-		return nil
-	end
-
-	local function handleCustomBindPressed(inputObject, gameProcessed)
-		if gameProcessed then
-			return
-		end
-
-		local binding = getBindingForKeyCode(inputObject.KeyCode)
-		if not binding then
-			return
-		end
-
-		if binding.mode == "hold" then
-			playCustomAction(binding, 0.05)
-		elseif binding.mode == "press" then
-			playCustomAction(binding, 0.05)
-		elseif binding.mode == "toggle" then
-			if currentCustomAction == binding then
-				stopCurrentCustomAction(0.1, true)
-			else
-				playCustomAction(binding, 0.05)
-			end
-		end
-	end
-
-	local function handleCustomBindReleased(inputObject, gameProcessed)
-		if gameProcessed then
-			return
-		end
-
-		local binding = getBindingForKeyCode(inputObject.KeyCode)
-		if not binding then
-			return
-		end
-
-		if binding.mode == "hold" and currentCustomAction == binding then
-			stopCurrentCustomAction(0.1, true)
-		end
-	end
-
-	-- Setup animation sets
-	for name, fileList in pairs(animNames) do
-		configureAnimationSet(name, fileList)
-	end
-
-	-- Event connections
-	connect(Humanoid.Died, onDied)
-	connect(Humanoid.Running, onRunning)
-	connect(Humanoid.Jumping, onJumping)
-	connect(Humanoid.Climbing, onClimbing)
-	connect(Humanoid.GettingUp, onGettingUp)
-	connect(Humanoid.FreeFalling, onFreeFall)
-	connect(Humanoid.FallingDown, onFallingDown)
-	connect(Humanoid.Seated, onSeated)
-	connect(Humanoid.PlatformStanding, onPlatformStanding)
-	connect(Humanoid.Swimming, onSwimming)
-
-	connect(UserInputService.InputBegan, handleCustomBindPressed)
-	connect(UserInputService.InputEnded, handleCustomBindReleased)
-
-	connect(player.Chatted, function(msg)
-		if currentCustomAction then
-			return
-		end
-
-		local emote = ""
-		if string.sub(msg, 1, 3) == "/e " then
-			emote = string.sub(msg, 4)
-		elseif string.sub(msg, 1, 7) == "/emote " then
-			emote = string.sub(msg, 8)
-		end
-
-		if pose == "Standing" and emoteNames[emote] ~= nil then
-			playAnimation(emote, EMOTE_TRANSITION_TIME, Humanoid)
-		end
-	end)
-
-	local playEmoteBindable = script:FindFirstChild("PlayEmote")
-	if playEmoteBindable and playEmoteBindable:IsA("BindableFunction") then
-		playEmoteBindable.OnInvoke = function(emote)
-			if currentCustomAction then
-				return false
-			end
-
-			if pose ~= "Standing" then
-				return
-			end
-
-			if emoteNames[emote] ~= nil then
-				playAnimation(emote, EMOTE_TRANSITION_TIME, Humanoid)
-				return true, currentAnimTrack
-			elseif typeof(emote) == "Instance" and emote:IsA("Animation") then
-				playEmote(emote, EMOTE_TRANSITION_TIME, Humanoid)
-				return true, currentAnimTrack
-			end
-
-			return false
-		end
-	end
-
-	if Character.Parent ~= nil then
-		nextIdleIndex = math.random(1, math.max(getIdleCount(), 1))
-		setIdleState(true, 0.1)
-		pose = "Standing"
-	end
-
-	local heartbeatConnection
-	heartbeatConnection = RunService.Heartbeat:Connect(function(dt)
-		if Character.Parent == nil or Humanoid.Parent == nil then
-			if heartbeatConnection then
-				heartbeatConnection:Disconnect()
-			end
-			cleanupConnections()
-			return
-		end
-
-		stepAnimate(dt)
-	end)
-
-	table.insert(connections, heartbeatConnection)
-
-	activeCleanup = function()
-		cleanupConnections()
-
-		if currentCustomAction then
-			if currentCustomAction.pingPongConnection then
-				currentCustomAction.pingPongConnection:Disconnect()
-			end
-			currentCustomAction.isActive = false
-			currentCustomAction.ignoreStop = true
-			currentCustomAction = nil
-		end
-
-		if currentAnimKeyframeHandler then
-			pcall(function()
-				currentAnimKeyframeHandler:Disconnect()
-			end)
-		end
-		if runAnimKeyframeHandler then
-			pcall(function()
-				runAnimKeyframeHandler:Disconnect()
-			end)
-		end
-		if currentToolAnimKeyframeHandler then
-			pcall(function()
-				currentToolAnimKeyframeHandler:Disconnect()
-			end)
-		end
-
-		if currentAnimTrack then
-			pcall(function()
-				currentAnimTrack:Stop(0)
-				currentAnimTrack:Destroy()
-			end)
-		end
-		if runAnimTrack then
-			pcall(function()
-				runAnimTrack:Stop(0)
-				runAnimTrack:Destroy()
-			end)
-		end
-		if toolAnimTrack then
-			pcall(function()
-				toolAnimTrack:Stop(0)
-				toolAnimTrack:Destroy()
-			end)
-		end
-		if idleTrack then
-			pcall(function()
-				idleTrack:Stop(0)
-				idleTrack:Destroy()
-			end)
+		if idx == 1 then
+			setSelected(tabBtn, true)
+			content.Visible = true
+			currentTabName = tabName
 		end
 	end
 end
 
-if player.Character then
-	startForCharacter(player.Character)
+function refreshTabsUI()
+	buildTabsUI()
 end
 
-player.CharacterAdded:Connect(function(character)
-	startForCharacter(character)
+buildTabsUI()
+
+-- ===== Test Window =====
+local expandedMainSize = UDim2.new(0, 430, 0, 360)
+local collapsedMainSize = UDim2.new(0, 430, 0, 38)
+
+local isMinimized = false
+local testWindowOpen = false
+local addWindowOpen = false
+local infoWindowOpen = false
+
+local testWindow = Instance.new("Frame")
+testWindow.Name = "TestWindow"
+testWindow.Size = UDim2.new(1, 0, 0, 170)
+testWindow.Position = UDim2.new(0, 0, 1, 40)
+testWindow.BackgroundColor3 = Theme.Panel2
+testWindow.BorderSizePixel = 0
+testWindow.Parent = mainFrame
+testWindow.Visible = false
+softPanel(testWindow, 14)
+
+local testGradient = Instance.new("UIGradient")
+testGradient.Color = ColorSequence.new({
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(27, 27, 33)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(21, 21, 26)),
+})
+testGradient.Rotation = 90
+testGradient.Parent = testWindow
+
+local testIdLabel = Instance.new("TextLabel")
+testIdLabel.Size = UDim2.new(0, 80, 0, 22)
+testIdLabel.Position = UDim2.new(0, 10, 0, 10)
+softLabel(testIdLabel, true)
+testIdLabel.Text = "Test ID:"
+testIdLabel.Parent = testWindow
+
+local testIdBox = Instance.new("TextBox")
+testIdBox.Size = UDim2.new(1, -150, 0, 28)
+testIdBox.Position = UDim2.new(0, 84, 0, 8)
+testIdBox.ClearTextOnFocus = false
+testIdBox.Text = ""
+testIdBox.PlaceholderText = "123456 or rbxassetid://..."
+testIdBox.Font = Enum.Font.Gotham
+testIdBox.TextSize = 13
+testIdBox.TextColor3 = Theme.Text
+testIdBox.BackgroundColor3 = Theme.Surface
+testIdBox.Parent = testWindow
+softInput(testIdBox, { BackgroundColor3 = Theme.Surface, StrokeTransparency = 0.9 })
+
+local playBtn = Instance.new("TextButton")
+playBtn.Size = UDim2.new(0, 58, 0, 28)
+playBtn.Position = UDim2.new(1, -122, 0, 8)
+playBtn.Text = "Play"
+playBtn.Font = Enum.Font.GothamBold
+playBtn.TextSize = 13
+playBtn.TextColor3 = Color3.fromRGB(22, 20, 22)
+playBtn.BackgroundColor3 = Theme.Accent
+playBtn.Parent = testWindow
+softButton(playBtn, {
+	CornerRadius = 10,
+	BackgroundColor3 = Theme.Accent,
+	HoverColor3 = Theme.AccentHover,
+	TextColor3 = Color3.fromRGB(22, 20, 22),
+})
+
+local stopBtn = Instance.new("TextButton")
+stopBtn.Size = UDim2.new(0, 58, 0, 28)
+stopBtn.Position = UDim2.new(1, -58, 0, 8)
+stopBtn.Text = "Stop"
+stopBtn.Font = Enum.Font.GothamBold
+stopBtn.TextSize = 13
+stopBtn.TextColor3 = Theme.Text
+stopBtn.BackgroundColor3 = Theme.Danger
+stopBtn.Parent = testWindow
+softButton(stopBtn, {
+	CornerRadius = 10,
+	BackgroundColor3 = Theme.Danger,
+	HoverColor3 = Theme.DangerHover,
+	TextColor3 = Theme.Text,
+})
+
+local sliderLabel = Instance.new("TextLabel")
+sliderLabel.Size = UDim2.new(0, 160, 0, 18)
+sliderLabel.Position = UDim2.new(0, 10, 0, 48)
+softLabel(sliderLabel, true)
+sliderLabel.Text = "Loop Segment (drag handles)"
+sliderLabel.Parent = testWindow
+
+local sliderFrame = Instance.new("Frame")
+sliderFrame.Size = UDim2.new(1, -20, 0, 28)
+sliderFrame.Position = UDim2.new(0, 10, 0, 70)
+sliderFrame.BackgroundColor3 = Theme.Surface
+sliderFrame.BorderSizePixel = 0
+sliderFrame.Parent = testWindow
+addCorner(sliderFrame, 10)
+addStroke(sliderFrame, Theme.Stroke, 0.9, 1)
+
+local sliderBar = Instance.new("Frame")
+sliderBar.Size = UDim2.new(1, -18, 0, 6)
+sliderBar.Position = UDim2.new(0, 9, 0, 11)
+sliderBar.BackgroundColor3 = Color3.fromRGB(72, 72, 82)
+sliderBar.BorderSizePixel = 0
+sliderBar.Parent = sliderFrame
+addCorner(sliderBar, 999)
+
+local rangeFill = Instance.new("Frame")
+rangeFill.Size = UDim2.new(0, 0, 0, 6)
+rangeFill.Position = UDim2.new(0, 0, 0, 11)
+rangeFill.BackgroundColor3 = Theme.Accent
+rangeFill.BorderSizePixel = 0
+rangeFill.Parent = sliderFrame
+addCorner(rangeFill, 999)
+
+local handleA = Instance.new("ImageButton")
+handleA.Size = UDim2.new(0, 12, 0, 18)
+handleA.Position = UDim2.new(0, 0, 0, 5)
+handleA.AnchorPoint = Vector2.new(0.5, 0)
+handleA.BackgroundTransparency = 1
+handleA.Image = "rbxasset://textures/ui/GuiImagePlaceholder.png"
+handleA.Parent = sliderFrame
+
+local handleB = handleA:Clone()
+handleB.Name = "HandleB"
+handleB.Position = UDim2.new(1, 0, 0, 5)
+handleB.Parent = sliderFrame
+
+local timeLabel = Instance.new("TextLabel")
+timeLabel.Size = UDim2.new(1, -20, 0, 16)
+timeLabel.Position = UDim2.new(0, 10, 0, 100)
+softLabel(timeLabel, true)
+timeLabel.Text = "Start: 0.00s  End: 0.00s"
+timeLabel.Parent = testWindow
+
+local dragging = nil
+local sliderAbsoluteX, sliderAbsoluteWidth
+local currentAnimationLength = 10
+
+local function updateSliderValues()
+	sliderAbsoluteX = sliderFrame.AbsolutePosition.X
+	sliderAbsoluteWidth = sliderFrame.AbsoluteSize.X
+	local ax = handleA.AbsolutePosition.X + handleA.AbsoluteSize.X / 2 - sliderAbsoluteX
+	local bx = handleB.AbsolutePosition.X + handleB.AbsoluteSize.X / 2 - sliderAbsoluteX
+	local aNorm = math.clamp(ax / math.max(sliderAbsoluteWidth, 1), 0, 1)
+	local bNorm = math.clamp(bx / math.max(sliderAbsoluteWidth, 1), 0, 1)
+	local start = math.min(aNorm, bNorm) * currentAnimationLength
+	local finish = math.max(aNorm, bNorm) * currentAnimationLength
+	timeLabel.Text = ("Start: %.2fs  End: %.2fs"):format(start, finish)
+	local left = math.min(aNorm, bNorm)
+	local width = math.abs(bNorm - aNorm)
+	rangeFill.Position = UDim2.new(left, 0, 0, 11)
+	rangeFill.Size = UDim2.new(width, 0, 0, 6)
+	return start, finish
+end
+
+local function beginDrag(handle, which)
+	dragging = which
+	updateSliderValues()
+end
+
+local function stopDrag()
+	dragging = nil
+end
+
+handleA.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		beginDrag(handleA, "A")
+	end
 end)
+handleB.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		beginDrag(handleB, "B")
+	end
+end)
+
+UserInputService.InputEnded:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		stopDrag()
+	end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+	if dragging then
+		if input.UserInputType == Enum.UserInputType.MouseMovement then
+			local mouseX = input.Position.X
+			local rel = (mouseX - sliderAbsoluteX) / math.max(sliderAbsoluteWidth, 1)
+			rel = math.clamp(rel, 0, 1)
+			if dragging == "A" then
+				handleA.Position = UDim2.new(rel, 0, 0, 5)
+			else
+				handleB.Position = UDim2.new(rel, 0, 0, 5)
+			end
+			updateSliderValues()
+		end
+	end
+end)
+
+sliderFrame:GetPropertyChangedSignal("AbsoluteSize"):Connect(function()
+	updateSliderValues()
+end)
+sliderFrame:GetPropertyChangedSignal("AbsolutePosition"):Connect(function()
+	updateSliderValues()
+end)
+
+playBtn.MouseButton1Click:Connect(function()
+	local raw = ""
+	if testIdBox and tostring(testIdBox.Text) ~= "" then
+		raw = testIdBox.Text
+	elseif idBox and tostring(idBox.Text) ~= "" then
+		raw = idBox.Text
+	end
+
+	local animId = normalizeAnimationId(raw)
+	if not animId then
+		warn("[Seximation] Invalid test ID:", raw)
+		return
+	end
+
+	animator = getAnimator()
+	if animator then
+		local testAnim = Instance.new("Animation")
+		testAnim.AnimationId = animId
+		local ok, testTrack = pcall(function() return animator:LoadAnimation(testAnim) end)
+		if ok and testTrack then
+			currentAnimationLength = testTrack.Length or 10
+			testTrack:Destroy()
+		else
+			currentAnimationLength = 10
+		end
+		testAnim:Destroy()
+	end
+
+	local start, finish = updateSliderValues()
+	local useFullAnimation = (start <= 0.1 and finish >= currentAnimationLength - 0.1) or (math.abs(finish - start) < 0.1)
+
+	if useFullAnimation then
+		start, finish = nil, nil
+		timeLabel.Text = "Playing full animation"
+	else
+		timeLabel.Text = ("Segment: %.2fs to %.2fs"):format(start, finish)
+	end
+
+	playAnimation(animId, start, finish, nil, nil, false, 1)
+end)
+
+stopBtn.MouseButton1Click:Connect(function()
+	cleanupCurrent()
+	timeLabel.Text = "Start: 0.00s  End: 0.00s"
+end)
+
+-- ===== Manage/Add Window =====
+local addWindow = Instance.new("Frame")
+addWindow.Name = "AddWindow"
+addWindow.Size = UDim2.new(1, 0, 0, 220)
+addWindow.Position = UDim2.new(0, 0, 1, 40)
+addWindow.BackgroundColor3 = Theme.Panel2
+addWindow.BorderSizePixel = 0
+addWindow.Parent = mainFrame
+addWindow.Visible = false
+softPanel(addWindow, 14)
+
+local addGradient = Instance.new("UIGradient")
+addGradient.Color = ColorSequence.new({
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(27, 27, 33)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(21, 21, 26)),
+})
+addGradient.Rotation = 90
+addGradient.Parent = addWindow
+
+local idLabel = Instance.new("TextLabel")
+idLabel.Size = UDim2.new(0, 80, 0, 22)
+idLabel.Position = UDim2.new(0, 10, 0, 10)
+softLabel(idLabel, true)
+idLabel.Text = "Anim ID:"
+idLabel.Parent = addWindow
+
+local idBox = Instance.new("TextBox")
+idBox.Size = UDim2.new(1, -150, 0, 28)
+idBox.Position = UDim2.new(0, 84, 0, 8)
+idBox.ClearTextOnFocus = false
+idBox.Text = ""
+idBox.PlaceholderText = "123456 or rbxassetid://..."
+idBox.Font = Enum.Font.Gotham
+idBox.TextSize = 13
+idBox.TextColor3 = Theme.Text
+idBox.BackgroundColor3 = Theme.Surface
+idBox.Parent = addWindow
+softInput(idBox, { BackgroundColor3 = Theme.Surface, StrokeTransparency = 0.9 })
+
+local newNameLabel = Instance.new("TextLabel")
+newNameLabel.Size = UDim2.new(0, 80, 0, 18)
+newNameLabel.Position = UDim2.new(0, 10, 0, 42)
+softLabel(newNameLabel, true)
+newNameLabel.Text = "Anim Name:"
+newNameLabel.Parent = addWindow
+
+local nameBox = Instance.new("TextBox")
+nameBox.Size = UDim2.new(0, 170, 0, 22)
+nameBox.Position = UDim2.new(0, 84, 0, 40)
+nameBox.ClearTextOnFocus = false
+nameBox.Text = ""
+nameBox.PlaceholderText = "Optional name"
+nameBox.Font = Enum.Font.Gotham
+nameBox.TextSize = 12
+nameBox.TextColor3 = Theme.Text
+nameBox.BackgroundColor3 = Theme.Surface
+nameBox.Parent = addWindow
+softInput(nameBox, { BackgroundColor3 = Theme.Surface, StrokeTransparency = 0.9, TextSize = 12 })
+
+local addTabLabel = Instance.new("TextLabel")
+addTabLabel.Size = UDim2.new(0, 80, 0, 18)
+addTabLabel.Position = UDim2.new(0, 10, 0, 68)
+softLabel(addTabLabel, true)
+addTabLabel.Text = "Tab name:"
+addTabLabel.Parent = addWindow
+
+local addTabBox = Instance.new("TextBox")
+addTabBox.Size = UDim2.new(0, 170, 0, 22)
+addTabBox.Position = UDim2.new(0, 84, 0, 66)
+addTabBox.ClearTextOnFocus = false
+addTabBox.Text = ""
+addTabBox.PlaceholderText = "Existing or new tab"
+addTabBox.Font = Enum.Font.Gotham
+addTabBox.TextSize = 12
+addTabBox.TextColor3 = Theme.Text
+addTabBox.BackgroundColor3 = Theme.Surface
+addTabBox.Parent = addWindow
+softInput(addTabBox, { BackgroundColor3 = Theme.Surface, StrokeTransparency = 0.9, TextSize = 12 })
+
+local addPingpongLabel = Instance.new("TextLabel")
+addPingpongLabel.Size = UDim2.new(0, 100, 0, 20)
+addPingpongLabel.Position = UDim2.new(0, 10, 0, 92)
+softLabel(addPingpongLabel, true)
+addPingpongLabel.Text = "Ping-pong loop:"
+addPingpongLabel.Parent = addWindow
+
+local addPingpongCheck = Instance.new("TextButton")
+addPingpongCheck.Size = UDim2.new(0, 24, 0, 24)
+addPingpongCheck.Position = UDim2.new(0, 110, 0, 89)
+addPingpongCheck.BackgroundColor3 = Theme.Surface
+addPingpongCheck.Text = ""
+addPingpongCheck.Font = Enum.Font.GothamBold
+addPingpongCheck.TextSize = 14
+addPingpongCheck.TextColor3 = Theme.Text
+addPingpongCheck.AutoButtonColor = false
+addPingpongCheck.Parent = addWindow
+softButton(addPingpongCheck, {
+	CornerRadius = 8,
+	BackgroundColor3 = Theme.Surface,
+	HoverColor3 = Theme.Surface2,
+	TextColor3 = Theme.Text,
+	TextSize = 14,
+})
+local addPingpongActive = false
+addPingpongCheck.MouseButton1Click:Connect(function()
+	addPingpongActive = not addPingpongActive
+	addPingpongCheck.BackgroundColor3 = addPingpongActive and Theme.Accent or Theme.Surface
+	addPingpongCheck.Text = addPingpongActive and "✓" or ""
+	addPingpongCheck.TextColor3 = addPingpongActive and Color3.fromRGB(22, 20, 22) or Theme.Text
+end)
+
+local addSpeedLabel = Instance.new("TextLabel")
+addSpeedLabel.Size = UDim2.new(0, 100, 0, 20)
+addSpeedLabel.Position = UDim2.new(0, 10, 0, 118)
+softLabel(addSpeedLabel, true)
+addSpeedLabel.Text = "Speed (0.1–3):"
+addSpeedLabel.Parent = addWindow
+
+local addSpeedBox = Instance.new("TextBox")
+addSpeedBox.Size = UDim2.new(0, 70, 0, 22)
+addSpeedBox.Position = UDim2.new(0, 110, 0, 116)
+addSpeedBox.ClearTextOnFocus = false
+addSpeedBox.Text = "1"
+addSpeedBox.Font = Enum.Font.Gotham
+addSpeedBox.TextSize = 12
+addSpeedBox.TextColor3 = Theme.Text
+addSpeedBox.BackgroundColor3 = Theme.Surface
+addSpeedBox.Parent = addWindow
+softInput(addSpeedBox, { BackgroundColor3 = Theme.Surface, StrokeTransparency = 0.9, TextSize = 12 })
+
+local addAnimBtn = Instance.new("TextButton")
+addAnimBtn.Size = UDim2.new(0, 92, 0, 28)
+addAnimBtn.Position = UDim2.new(1, -192, 0, 40)
+addAnimBtn.Text = "Add Anim"
+addAnimBtn.Font = Enum.Font.GothamBold
+addAnimBtn.TextSize = 12
+addAnimBtn.TextColor3 = Color3.fromRGB(22, 20, 22)
+addAnimBtn.Parent = addWindow
+softButton(addAnimBtn, {
+	CornerRadius = 10,
+	BackgroundColor3 = Theme.Accent,
+	HoverColor3 = Theme.AccentHover,
+	TextColor3 = Color3.fromRGB(22, 20, 22),
+})
+
+local addTabBtn = Instance.new("TextButton")
+addTabBtn.Size = UDim2.new(0, 92, 0, 28)
+addTabBtn.Position = UDim2.new(1, -192, 0, 70)
+addTabBtn.Text = "Add Tab"
+addTabBtn.Font = Enum.Font.GothamBold
+addTabBtn.TextSize = 12
+addTabBtn.TextColor3 = Color3.fromRGB(22, 20, 22)
+addTabBtn.Parent = addWindow
+softButton(addTabBtn, {
+	CornerRadius = 10,
+	BackgroundColor3 = Theme.AccentSoft,
+	HoverColor3 = Theme.AccentHover,
+	TextColor3 = Color3.fromRGB(22, 20, 22),
+})
+
+local deleteTabBtn = Instance.new("TextButton")
+deleteTabBtn.Size = UDim2.new(0, 92, 0, 28)
+deleteTabBtn.Position = UDim2.new(1, -96, 0, 70)
+deleteTabBtn.Text = "Delete Tab"
+deleteTabBtn.Font = Enum.Font.GothamBold
+deleteTabBtn.TextSize = 12
+deleteTabBtn.TextColor3 = Theme.Text
+deleteTabBtn.Parent = addWindow
+softButton(deleteTabBtn, {
+	CornerRadius = 10,
+	BackgroundColor3 = Theme.Danger,
+	HoverColor3 = Theme.DangerHover,
+	TextColor3 = Theme.Text,
+})
+
+local function updateBodyVisibility()
+	local bodyVisible = not isMinimized
+
+	searchBox.Visible = bodyVisible
+	tabsFrame.Visible = bodyVisible
+	contentFrame.Visible = bodyVisible
+
+	testWindow.Visible = bodyVisible and testWindowOpen
+	addWindow.Visible = bodyVisible and addWindowOpen
+
+	mainFrame.Size = bodyVisible and expandedMainSize or collapsedMainSize
+end
+
+local function closeInfoWindow()
+	infoWindowOpen = false
+	if infoOverlay then
+		infoOverlay:Destroy()
+		infoOverlay = nil
+	end
+end
+
+local function openInfoWindow()
+	if infoOverlay then
+		infoWindowOpen = true
+		infoOverlay.Visible = true
+		return
+	end
+
+	infoWindowOpen = true
+
+	infoOverlay = Instance.new("Frame")
+	infoOverlay.Name = "InfoOverlay"
+	infoOverlay.Size = UDim2.new(1, 0, 1, 0)
+	infoOverlay.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+	infoOverlay.BackgroundTransparency = 0.42
+	infoOverlay.BorderSizePixel = 0
+	infoOverlay.Parent = screenGui
+	infoOverlay.ZIndex = 100
+
+	local modal = Instance.new("Frame")
+	modal.Size = UDim2.new(0, 390, 0, 310)
+	modal.Position = UDim2.new(0.5, -195, 0.5, -155)
+	modal.AnchorPoint = Vector2.new(0.5, 0.5)
+	modal.BackgroundColor3 = Theme.Panel
+	modal.BorderSizePixel = 0
+	modal.Parent = infoOverlay
+	modal.ZIndex = 101
+	softPanel(modal, 16)
+
+	local mg = Instance.new("UIGradient")
+	mg.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(28, 28, 34)),
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(20, 20, 25)),
+	})
+	mg.Rotation = 90
+	mg.Parent = modal
+
+	local title = Instance.new("TextLabel")
+	title.Size = UDim2.new(1, -48, 0, 24)
+	title.Position = UDim2.new(0, 14, 0, 12)
+	title.BackgroundTransparency = 1
+	title.Text = "Info / Credits"
+	title.Font = Enum.Font.GothamBold
+	title.TextSize = 16
+	title.TextColor3 = Theme.Text
+	title.Parent = modal
+	title.ZIndex = 102
+	softLabel(title, false)
+
+	local close = Instance.new("TextButton")
+	close.Size = UDim2.new(0, 28, 0, 28)
+	close.Position = UDim2.new(1, -12, 0, 10)
+	close.AnchorPoint = Vector2.new(1, 0)
+	close.Text = "×"
+	close.Font = Enum.Font.GothamBold
+	close.TextSize = 15
+	close.TextColor3 = Theme.Text
+	close.BackgroundColor3 = Theme.Danger
+	close.Parent = modal
+	close.ZIndex = 102
+	softButton(close, {
+		CornerRadius = 10,
+		BackgroundColor3 = Theme.Danger,
+		HoverColor3 = Theme.DangerHover,
+		TextColor3 = Theme.Text,
+	})
+
+	local body = Instance.new("TextLabel")
+	body.Size = UDim2.new(1, -28, 1, -54)
+	body.Position = UDim2.new(0, 14, 0, 42)
+	body.BackgroundTransparency = 1
+	body.TextXAlignment = Enum.TextXAlignment.Left
+	body.TextYAlignment = Enum.TextYAlignment.Top
+	body.TextWrapped = true
+	body.RichText = false
+	body.Font = Enum.Font.Gotham
+	body.TextSize = 13
+	body.TextColor3 = Theme.Text
+	body.Parent = modal
+	body.ZIndex = 102
+	body.Text =
+		"Credits:\n" ..
+		"• @cvtmvtt on Discord.\n" ..
+		"• UI restyle and extra controls added in this version.\n" ..
+		"• Remote config source: " .. CONFIG_URL .. "\n" ..
+		"• Mobile(delta) fallback logic.\n\n" ..
+		"How to use:\n" ..
+		"• Pick a tab on the left to browse animations.\n" ..
+		"• Use Search to find animation names fast.\n" ..
+		"• Right-click an animation to edit, move, or delete it.\n" ..
+		"• Open Manage to add animations or tabs.\n" ..
+		"• Open Test to preview a custom animation ID and segment.\n\n" ..
+		"Files:\n" ..
+		"• Local cache path: " .. LOCAL_FILE .. "\n" ..
+		"• If local file support is unavailable(mobile), the script uses the GitHub URL or fallback data."
+
+	close.MouseButton1Click:Connect(closeInfoWindow)
+	infoOverlay.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 then
+			local mouse = UserInputService:GetMouseLocation()
+			local absPos, absSize = modal.AbsolutePosition, modal.AbsoluteSize
+			if not (mouse.X >= absPos.X and mouse.X <= absPos.X + absSize.X and mouse.Y >= absPos.Y and mouse.Y <= absPos.Y + absSize.Y) then
+				closeInfoWindow()
+			end
+		end
+	end)
+end
+
+-- Add animation button behavior
+addAnimBtn.MouseButton1Click:Connect(function()
+	local raw = idBox.Text
+	local animId = normalizeAnimationId(raw)
+	if not animId then
+		warn("[Seximation] Invalid ID for new animation:", raw)
+		return
+	end
+	local animName = nameBox.Text and (#nameBox.Text > 0) and nameBox.Text or nil
+	local targetTab = (addTabBox.Text and #addTabBox.Text > 0) and addTabBox.Text or currentTabName or "General"
+	local speed = tonumber(addSpeedBox.Text) or 1
+	speed = math.clamp(speed, 0.1, 3)
+
+	local tabIdx = ensureTabExists(targetTab)
+
+	local newAnim = { id = animId }
+	if animName then newAnim.name = animName end
+	if addPingpongActive then newAnim.pingpong = true end
+	newAnim.speed = speed
+	table.insert(tabConfig[tabIdx].animations, newAnim)
+
+	writeLocalFile(serializeConfig(tabConfig))
+	refreshTabsUI()
+
+	idBox.Text = ""
+	nameBox.Text = ""
+	addPingpongActive = false
+	addPingpongCheck.BackgroundColor3 = Theme.Surface
+	addPingpongCheck.Text = ""
+	addPingpongCheck.TextColor3 = Theme.Text
+	addSpeedBox.Text = "1"
+end)
+
+addTabBtn.MouseButton1Click:Connect(function()
+	local newTabName = addTabBox.Text and (#addTabBox.Text > 0) and addTabBox.Text or nil
+	if not newTabName then
+		warn("[Seximation] Enter a tab name to add.")
+		return
+	end
+	if not findTabIndexByName(newTabName) then
+		table.insert(tabConfig, { name = newTabName, animations = {} })
+		writeLocalFile(serializeConfig(tabConfig))
+		refreshTabsUI()
+		addTabBox.Text = ""
+	end
+end)
+
+deleteTabBtn.MouseButton1Click:Connect(function()
+	if not currentTabName then
+		warn("[Seximation] No tab selected.")
+		return
+	end
+	if addTabBox.Text ~= currentTabName then
+		warn("[Seximation] To confirm deletion type the current tab name into the 'Tab name' box and press Delete Tab.")
+		return
+	end
+	for i, t in ipairs(tabConfig) do
+		if t.name == currentTabName then
+			table.remove(tabConfig, i)
+			break
+		end
+	end
+	writeLocalFile(serializeConfig(tabConfig))
+	addTabBox.Text = ""
+	refreshTabsUI()
+end)
+
+-- Title bar controls
+closeBtn.MouseButton1Click:Connect(function()
+	screenGui.Enabled = false
+end)
+
+minimizeBtn.MouseButton1Click:Connect(function()
+	isMinimized = not isMinimized
+	if isMinimized then
+		testWindowOpen = false
+		addWindowOpen = false
+		closeInfoWindow()
+	end
+	updateBodyVisibility()
+end)
+
+infoBtn.MouseButton1Click:Connect(function()
+	if infoWindowOpen then
+		closeInfoWindow()
+	else
+		openInfoWindow()
+	end
+end)
+
+local function setTestWindowVisible(show)
+	testWindowOpen = show and true or false
+	if not isMinimized then
+		testWindow.Visible = testWindowOpen
+	end
+end
+
+local function setAddWindowVisible(show)
+	addWindowOpen = show and true or false
+	if not isMinimized then
+		addWindow.Visible = addWindowOpen
+	end
+end
+
+local function toggleTestWindow()
+	setTestWindowVisible(not testWindowOpen)
+	if addWindowOpen then
+		setAddWindowVisible(false)
+	end
+end
+
+local function toggleAddWindow()
+	setAddWindowVisible(not addWindowOpen)
+	if testWindowOpen then
+		setTestWindowVisible(false)
+	end
+end
+
+local function bindHover(btn, normalColor, hoverColor)
+	btn.MouseEnter:Connect(function()
+		tween(btn, TweenInfo.new(0.15), { BackgroundColor3 = hoverColor }):Play()
+	end)
+	btn.MouseLeave:Connect(function()
+		tween(btn, TweenInfo.new(0.15), { BackgroundColor3 = normalColor }):Play()
+	end)
+end
+
+bindHover(playBtn, Theme.Accent, Theme.AccentHover)
+bindHover(stopBtn, Theme.Danger, Theme.DangerHover)
+bindHover(addAnimBtn, Theme.Accent, Theme.AccentHover)
+bindHover(addTabBtn, Theme.AccentSoft, Theme.AccentHover)
+bindHover(deleteTabBtn, Theme.Danger, Theme.DangerHover)
+
+local testToggleBtn = Instance.new("TextButton")
+testToggleBtn.Name = "TestToggle"
+testToggleBtn.Size = UDim2.new(0, 78, 1, -10)
+testToggleBtn.Position = UDim2.new(1, -110, 0, 5)
+testToggleBtn.AnchorPoint = Vector2.new(1, 0)
+testToggleBtn.Parent = titleBar
+testToggleBtn.BackgroundColor3 = Theme.Surface
+testToggleBtn.Font = Enum.Font.GothamBold
+testToggleBtn.Text = "Test"
+testToggleBtn.TextSize = 12
+testToggleBtn.TextColor3 = Theme.Text
+softButton(testToggleBtn, {
+	CornerRadius = 10,
+	BackgroundColor3 = Theme.Surface,
+	HoverColor3 = Theme.Surface2,
+	TextColor3 = Theme.Text,
+	TextSize = 12,
+})
+
+local manageBtn = Instance.new("TextButton")
+manageBtn.Name = "ManageBtn"
+manageBtn.Size = UDim2.new(0, 78, 1, -10)
+manageBtn.Position = UDim2.new(1, -192, 0, 5)
+manageBtn.AnchorPoint = Vector2.new(1, 0)
+manageBtn.Parent = titleBar
+manageBtn.BackgroundColor3 = Theme.Surface
+manageBtn.Font = Enum.Font.GothamBold
+manageBtn.Text = "Manage"
+manageBtn.TextSize = 12
+manageBtn.TextColor3 = Theme.Text
+softButton(manageBtn, {
+	CornerRadius = 10,
+	BackgroundColor3 = Theme.Surface,
+	HoverColor3 = Theme.Surface2,
+	TextColor3 = Theme.Text,
+	TextSize = 12,
+})
+
+testToggleBtn.MouseButton1Click:Connect(function()
+	toggleTestWindow()
+	updateBodyVisibility()
+end)
+
+manageBtn.MouseButton1Click:Connect(function()
+	toggleAddWindow()
+	updateBodyVisibility()
+end)
+
+-- Dragging mainFrame
+local dragToggle = false
+local dragStart = nil
+local startPos = nil
+
+titleBar.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		dragToggle = true
+		dragStart = input.Position
+		startPos = mainFrame.Position
+		input.Changed:Connect(function()
+			if input.UserInputState == Enum.UserInputState.End then
+				dragToggle = false
+			end
+		end)
+	end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+	if dragToggle and input.UserInputType == Enum.UserInputType.MouseMovement then
+		if dragStart and startPos then
+			local delta = input.Position - dragStart
+			mainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+		end
+	end
+end)
+
+local function ensureAnimatorAvailable()
+	animator = getAnimator()
+end
+
+handleA.Position = UDim2.new(0, 0, 0, 5)
+handleB.Position = UDim2.new(1, 0, 0, 5)
+updateSliderValues()
+
+player.CharacterRemoving:Connect(function()
+	cleanupCurrent()
+end)
+
+if character then
+	ensureAnimatorAvailable()
+end
+
+updateBodyVisibility()
+setTestWindowVisible(false)
+setAddWindowVisible(false)
+
+-- expose initial state
+if screenGui then
+	screenGui.Enabled = true
+end
