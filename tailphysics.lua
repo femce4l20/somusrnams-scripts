@@ -1,10 +1,6 @@
 -- ============================================================
 --  TailPhysics LocalScript  (R15)
 --  Physics-based tail simulation inspired by Tux Physics Tails
---  by @R3dTuxedo  –  github.com/R3dTuxedo/tux-physics-tails-v3
--- ============================================================
--- Placement: StarterCharacterScripts  (recommended)
---            or StarterPlayerScripts  (also works)
 -- ============================================================
 
 local RunService = game:GetService("RunService")
@@ -19,30 +15,33 @@ local character = player.Character or player.CharacterAdded:Wait()
 local CONFIG = {
 	-- Spring-damper physics
 	STIFFNESS       = 28,            -- Pull-back force toward rest pose (higher = snappier)
-	DAMPING         = .7,             -- Oscillation friction      (higher = less bounce)
+	DAMPING         = 1,             -- Oscillation friction      (higher = less bounce)
 	INERTIA_SCALE   = 0.045,         -- Overall movement influence on the tail
 
 	-- Make the tail react less to walking side-to-side
-	SIDE_DEADZONE   = 1.25,          -- Ignore tiny lateral motion
+	SIDE_DEADZONE   = 2.25,          -- Ignore tiny lateral motion
 	FORWARD_DEADZONE = 0.75,         -- Ignore tiny forward/back motion
 
 	-- Forward-trailing bias
-	FORWARD_DRAG_BIAS    = -0.012,    -- Extra backward pull when moving forward
+	FORWARD_DRAG_BIAS    = -0.005,    -- Extra backward pull when moving forward
 	FORWARD_YAW_REDUCTION = 0.88,     -- Reduce yaw while moving forward
 	FORWARD_MOTION_FULL   = 8,        -- Speed where forward gating reaches full strength
 	YAW_UNLOCK_ANGLE      = math.rad(14), -- Tail must be "below" this much before yaw opens up
 	YAW_FULL_UNLOCK       = math.rad(24),  -- Full yaw unlock by this angle
 
-	-- Idle wag (sinusoidal left-right sway when standing still)
-	WAG_SPEED       = 5,             -- Wag frequency in rad/s
-	WAG_AMPLITUDE   = 0.09,          -- Wag magnitude in radians
-	WAG_FADE_SPEED  = 0.12,          -- How quickly wag fades as the character moves
+	-- Idle wag (cuter, slightly more noticeable)
+	WAG_SPEED          = 3.5,          -- Slightly quicker, still soft
+	WAG_AMPLITUDE      = 0.115,        -- More noticeable wag
+	WAG_FADE_SPEED     = 0.10,         -- Fades a little more gently while moving
+	WAG_SECONDARY_SPEED = 7.0,         -- Small secondary flutter for a cuter feel
+	WAG_SECONDARY_AMPLITUDE = 0.028,   -- Very subtle extra motion
+	WAG_PITCH_BOB      = math.rad(1.25), -- Tiny pitch bob during idle wag
 
 	-- Animation / pose influence
-	ANIMATION_INFLUENCE         = 0.35,  -- How much animation pose influences the tail
+	ANIMATION_INFLUENCE         = 0.65,  -- How much animation pose influences the tail
 	ANIMATION_LINEAR_INFLUENCE  = 0.42,   -- How much animated body translation affects tail motion
 	ANIMATION_MOTOR_INFLUENCE   = 0.30,   -- How much joint motor transforms affect tail motion
-	ANIMATION_BLEND_SMOOTHING   = 0.18,   -- Lower = smoother, higher = more responsive
+	ANIMATION_BLEND_SMOOTHING   = 0.28,   -- Lower = smoother, higher = more responsive
 
 	-- Safety clamps
 	MAX_ANGLE       = math.rad(70),  -- Maximum swing angle (radians)
@@ -377,10 +376,18 @@ local function setupPhysicsTail(accessory, char)
 			targetPitch += -smoothedAnimAngular.X * 0.045
 			targetPitch += -smoothedAnimLinear.Z * 0.012
 
-			-- Idle wag fades out when moving
+			-- Idle wag: softer, cuter, and a little more noticeable.
+			-- Uses a primary side-to-side sway plus a tiny secondary flutter
+			-- and a subtle pitch bob so the tail feels more lively.
 			local speed = effectiveLocalVel.Magnitude
 			local wagFade = math.max(0, 1 - speed * CONFIG.WAG_FADE_SPEED)
-			targetYaw += math.sin(wagTime * CONFIG.WAG_SPEED) * CONFIG.WAG_AMPLITUDE * wagFade
+			local idleStrength = wagFade * wagFade
+
+			local primaryWag = math.sin(wagTime * CONFIG.WAG_SPEED)
+			local secondaryWag = math.sin(wagTime * CONFIG.WAG_SECONDARY_SPEED + 0.8)
+
+			targetYaw += (primaryWag * CONFIG.WAG_AMPLITUDE + secondaryWag * CONFIG.WAG_SECONDARY_AMPLITUDE) * idleStrength
+			targetPitch += math.abs(primaryWag) * CONFIG.WAG_PITCH_BOB * idleStrength
 
 			-- Semi-implicit Euler
 			yawVel = yawVel + (-CONFIG.STIFFNESS * (yawAngle - targetYaw) - CONFIG.DAMPING * yawVel) * ts
