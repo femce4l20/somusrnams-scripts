@@ -95,83 +95,83 @@ CONFIGS.wings = {
 }
 
 CONFIGS.tails = {
-	-- Spring-damper physics
-	STIFFNESS       = 32,
-	DAMPING         = 0.55,
-	INERTIA_SCALE   = 0.065,
+	-- Spring-damper physics (stronger + more damped)
+	STIFFNESS       = 40,     -- slightly higher to resist lag buildup
+	DAMPING         = 0.85,   -- MUCH higher to kill infinite oscillation
+	INERTIA_SCALE   = 0.045,  -- reduced so velocity doesn't stack endlessly
 
-	-- Deadzones
-	SIDE_DEADZONE     = 1.80,
-	FORWARD_DEADZONE  = 0.60,
+	-- Deadzones (slightly increased for heavy tails)
+	SIDE_DEADZONE     = 2.1,
+	FORWARD_DEADZONE  = 0.75,
 
 	-- Forward-trailing bias
-	FORWARD_DRAG_BIAS      = -0.008,
-	FORWARD_YAW_REDUCTION  = 0.82,
-	FORWARD_MOTION_FULL    = 8,
-	YAW_UNLOCK_ANGLE       = math.rad(10),
-	YAW_FULL_UNLOCK        = math.rad(20),
+	FORWARD_DRAG_BIAS      = -0.010,
+	FORWARD_YAW_REDUCTION  = 0.88,
+	FORWARD_MOTION_FULL    = 10,
+	YAW_UNLOCK_ANGLE       = math.rad(12),
+	YAW_FULL_UNLOCK        = math.rad(24),
 
-	-- Momentum / trailing behavior
-	MOTION_TRAIL_SMOOTHING   = 0.14,
-	MOTION_ACCEL_INFLUENCE   = 0.055,
-	TRAIL_RELEASE            = 0.10,
+	-- Momentum / trailing behavior (critical fixes)
+	MOTION_TRAIL_SMOOTHING   = 0.20,  -- smoother = less jitter stacking
+	MOTION_ACCEL_INFLUENCE   = 0.035, -- reduced to stop runaway acceleration
+	TRAIL_RELEASE            = 0.22,  -- MUCH stronger decay (key fix)
 
-	-- Rotation tracking
-	ROTATION_YAW_INFLUENCE   = 0.05,
-	ROTATION_ROLL_INFLUENCE  = 0.55,
-	ROTATION_PITCH_INFLUENCE = 0.10,
-	ROTATION_SMOOTHING       = 0.22,
+	-- Rotation tracking (less reactive)
+	ROTATION_YAW_INFLUENCE   = 0.035,
+	ROTATION_ROLL_INFLUENCE  = 0.45,
+	ROTATION_PITCH_INFLUENCE = 0.08,
+	ROTATION_SMOOTHING       = 0.30,  -- smoother = more stable
 
-	-- Roll axis
-	ROLL_STIFFNESS   = 24,
-	ROLL_DAMPING     = 0.50,
-	MAX_ROLL_ANGLE   = math.rad(38),
-	YAW_TO_ROLL      = 0.30,
-	SIDE_TO_ROLL     = 0.018,
+	-- Roll axis (more controlled)
+	ROLL_STIFFNESS   = 28,
+	ROLL_DAMPING     = 0.75,
+	MAX_ROLL_ANGLE   = math.rad(32),
+	YAW_TO_ROLL      = 0.22,
+	SIDE_TO_ROLL     = 0.014,
 
-	-- Direction-change "whip"
-	WHIP_THRESHOLD   = 3.5,
-	WHIP_STRENGTH    = 1.80,
-	WHIP_COOLDOWN    = 0.18,
+	-- Direction-change "whip" (reduced energy injection)
+	WHIP_THRESHOLD   = 4.5,
+	WHIP_STRENGTH    = 1.1,
+	WHIP_COOLDOWN    = 0.28,
 
 	-- Smear
-	SMEAR_MAX_ANGLE     = math.rad(88),
-	SMEAR_SPEED_FULL    = 20,
+	SMEAR_MAX_ANGLE     = math.rad(75),
+	SMEAR_SPEED_FULL    = 24,
 
-	-- Idle wag
-	WAG_SPEED               = 1,
-	WAG_AMPLITUDE           = 0.175,
-	WAG_FADE_SPEED          = 0.085,
-	WAG_SECONDARY_SPEED     = 6.5,
-	WAG_SECONDARY_AMPLITUDE = 0.042,
-	WAG_PITCH_BOB           = math.rad(2.0),
-	WAG_ROLL_AMPLITUDE      = math.rad(4.5),
-	WAG_ROLL_SPEED          = 4.8,
+	-- Idle wag (toned down for heavy mass feel)
+	WAG_SPEED               = 0.8,
+	WAG_AMPLITUDE           = 0.12,
+	WAG_FADE_SPEED          = 0.12,
+	WAG_SECONDARY_SPEED     = 5.5,
+	WAG_SECONDARY_AMPLITUDE = 0.028,
+	WAG_PITCH_BOB           = math.rad(1.5),
+	WAG_ROLL_AMPLITUDE      = math.rad(3.2),
+	WAG_ROLL_SPEED          = 4.2,
 
 	-- Animation / pose influence
-	ANIMATION_INFLUENCE         = 0.65,
-	ANIMATION_LINEAR_INFLUENCE  = 0.42,
-	ANIMATION_MOTOR_INFLUENCE   = 0.30,
-	ANIMATION_BLEND_SMOOTHING   = 0.28,
+	ANIMATION_INFLUENCE         = 0.55,
+	ANIMATION_LINEAR_INFLUENCE  = 0.35,
+	ANIMATION_MOTOR_INFLUENCE   = 0.25,
+	ANIMATION_BLEND_SMOOTHING   = 0.35,
 
-	-- Coupling
-	YAW_TO_PITCH_COUPLING       = 0.080,
-	PITCH_TO_YAW_COUPLING       = 0.024,
-	YAW_VELOCITY_TO_PITCH       = 0.0022,
-	PITCH_VELOCITY_TO_YAW       = 0.0014,
+	-- Coupling (reduced feedback loops)
+	YAW_TO_PITCH_COUPLING       = 0.060,
+	PITCH_TO_YAW_COUPLING       = 0.018,
+	YAW_VELOCITY_TO_PITCH       = 0.0015,
+	PITCH_VELOCITY_TO_YAW       = 0.0010,
 
-	-- Chaotic secondary motion
-	CHAOS_STRENGTH   = 0.012,
-	CHAOS_RESPONSE   = 0.08,
-	CHAOS_DAMPING    = 0.90,
+	-- Chaotic secondary motion (heavily damped)
+	CHAOS_STRENGTH   = 0.006,
+	CHAOS_RESPONSE   = 0.05,
+	CHAOS_DAMPING    = 0.96,
 
 	-- Speed-dependent inversion / exaggeration
 	SPRINT_SPEED             = 16,
-	MIN_INVERSION_STRENGTH   = 0.20,
-	MAX_INVERSION_STRENGTH   = 1.00,
+	MIN_INVERSION_STRENGTH   = 0.15,
+	MAX_INVERSION_STRENGTH   = 0.75,
 
-	-- Safety clamps
-	MAX_ANGLE  = math.rad(70),
+	-- Safety clamps (slightly tighter)
+	MAX_ANGLE  = math.rad(60),
 
 	-- Fixed timestep
 	TIMESTEP   = 1 / 120,
@@ -195,8 +195,6 @@ local WHITELISTS = {
 --  MODE-SELECTION UI
 -- ================================================================
 
--- Returns a Promise-like: calls onSelected(mode) where mode is
--- "wings", "tails", or "both".
 local function createModeUI(onSelected)
 	local playerGui = player:WaitForChild("PlayerGui")
 
@@ -207,76 +205,70 @@ local function createModeUI(onSelected)
 	screenGui.ZIndexBehavior   = Enum.ZIndexBehavior.Sibling
 	screenGui.Parent           = playerGui
 
-	-- Backdrop blur / dim
 	local blur = Instance.new("Frame")
-	blur.Size            = UDim2.fromScale(1, 1)
-	blur.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+	blur.Size                   = UDim2.fromScale(1, 1)
+	blur.BackgroundColor3       = Color3.fromRGB(0, 0, 0)
 	blur.BackgroundTransparency = 0.55
-	blur.BorderSizePixel = 0
-	blur.ZIndex          = 1
-	blur.Parent          = screenGui
+	blur.BorderSizePixel        = 0
+	blur.ZIndex                 = 1
+	blur.Parent                 = screenGui
 
-	-- Card
 	local card = Instance.new("Frame")
-	card.Size                    = UDim2.fromOffset(340, 230)
-	card.Position                = UDim2.fromScale(0.5, 0.5)
-	card.AnchorPoint             = Vector2.new(0.5, 0.5)
-	card.BackgroundColor3        = Color3.fromRGB(18, 18, 24)
-	card.BorderSizePixel         = 0
-	card.ZIndex                  = 2
-	card.Parent                  = screenGui
+	card.Size             = UDim2.fromOffset(340, 230)
+	card.Position         = UDim2.fromScale(0.5, 0.5)
+	card.AnchorPoint      = Vector2.new(0.5, 0.5)
+	card.BackgroundColor3 = Color3.fromRGB(18, 18, 24)
+	card.BorderSizePixel  = 0
+	card.ZIndex           = 2
+	card.Parent           = screenGui
 
 	local cardCorner = Instance.new("UICorner")
 	cardCorner.CornerRadius = UDim.new(0, 14)
 	cardCorner.Parent       = card
 
 	local cardStroke = Instance.new("UIStroke")
-	cardStroke.Color       = Color3.fromRGB(90, 90, 130)
-	cardStroke.Thickness   = 1.5
+	cardStroke.Color        = Color3.fromRGB(90, 90, 130)
+	cardStroke.Thickness    = 1.5
 	cardStroke.Transparency = 0.35
-	cardStroke.Parent      = card
+	cardStroke.Parent       = card
 
-	-- Drag bar
 	local dragBar = Instance.new("TextLabel")
-	dragBar.Size                  = UDim2.new(1, 0, 0, 36)
-	dragBar.Position              = UDim2.fromOffset(0, 0)
-	dragBar.BackgroundColor3      = Color3.fromRGB(28, 28, 38)
-	dragBar.BorderSizePixel       = 0
-	dragBar.Text                  = "⚙  Physics Mode"
-	dragBar.TextColor3            = Color3.fromRGB(200, 200, 220)
-	dragBar.Font                  = Enum.Font.GothamBold
-	dragBar.TextSize              = 14
-	dragBar.ZIndex                = 3
-	dragBar.Parent                = card
+	dragBar.Size             = UDim2.new(1, 0, 0, 36)
+	dragBar.Position         = UDim2.fromOffset(0, 0)
+	dragBar.BackgroundColor3 = Color3.fromRGB(28, 28, 38)
+	dragBar.BorderSizePixel  = 0
+	dragBar.Text             = "⚙  Physics Mode"
+	dragBar.TextColor3       = Color3.fromRGB(200, 200, 220)
+	dragBar.Font             = Enum.Font.GothamBold
+	dragBar.TextSize         = 14
+	dragBar.ZIndex           = 3
+	dragBar.Parent           = card
 
 	local dragBarCorner = Instance.new("UICorner")
 	dragBarCorner.CornerRadius = UDim.new(0, 14)
 	dragBarCorner.Parent       = dragBar
 
-	-- Clamp corners to top only via a cover strip
 	local dragBarBottom = Instance.new("Frame")
-	dragBarBottom.Size                    = UDim2.new(1, 0, 0, 14)
-	dragBarBottom.Position                = UDim2.new(0, 0, 1, -14)
-	dragBarBottom.BackgroundColor3        = Color3.fromRGB(28, 28, 38)
-	dragBarBottom.BorderSizePixel         = 0
-	dragBarBottom.ZIndex                  = 3
-	dragBarBottom.Parent                  = dragBar
+	dragBarBottom.Size             = UDim2.new(1, 0, 0, 14)
+	dragBarBottom.Position         = UDim2.new(0, 0, 1, -14)
+	dragBarBottom.BackgroundColor3 = Color3.fromRGB(28, 28, 38)
+	dragBarBottom.BorderSizePixel  = 0
+	dragBarBottom.ZIndex           = 3
+	dragBarBottom.Parent           = dragBar
 
-	-- Sub-label
 	local sub = Instance.new("TextLabel")
-	sub.Size             = UDim2.new(1, -20, 0, 24)
-	sub.Position         = UDim2.fromOffset(10, 42)
+	sub.Size               = UDim2.new(1, -20, 0, 24)
+	sub.Position           = UDim2.fromOffset(10, 42)
 	sub.BackgroundTransparency = 1
-	sub.Text             = "Select which accessories to apply physics to:"
-	sub.TextColor3       = Color3.fromRGB(150, 150, 170)
-	sub.Font             = Enum.Font.Gotham
-	sub.TextSize         = 12
-	sub.TextWrapped      = true
-	sub.TextXAlignment   = Enum.TextXAlignment.Left
-	sub.ZIndex           = 3
-	sub.Parent           = card
+	sub.Text               = "Select which accessories to apply physics to:"
+	sub.TextColor3         = Color3.fromRGB(150, 150, 170)
+	sub.Font               = Enum.Font.Gotham
+	sub.TextSize           = 12
+	sub.TextWrapped        = true
+	sub.TextXAlignment     = Enum.TextXAlignment.Left
+	sub.ZIndex             = 3
+	sub.Parent             = card
 
-	-- Button factory
 	local BUTTON_DATA = {
 		{ label = "🕊️  Wings", mode = "wings", color = Color3.fromRGB(90, 120, 220) },
 		{ label = "🐾  Tails", mode = "tails", color = Color3.fromRGB(200, 90, 140) },
@@ -284,45 +276,44 @@ local function createModeUI(onSelected)
 	}
 
 	local buttonHolder = Instance.new("Frame")
-	buttonHolder.Size                    = UDim2.new(1, -24, 0, 54)
-	buttonHolder.Position                = UDim2.fromOffset(12, 80)
-	buttonHolder.BackgroundTransparency  = 1
-	buttonHolder.ZIndex                  = 3
-	buttonHolder.Parent                  = card
+	buttonHolder.Size                   = UDim2.new(1, -24, 0, 54)
+	buttonHolder.Position               = UDim2.fromOffset(12, 80)
+	buttonHolder.BackgroundTransparency = 1
+	buttonHolder.ZIndex                 = 3
+	buttonHolder.Parent                 = card
 
 	local buttonLayout = Instance.new("UIListLayout")
-	buttonLayout.FillDirection  = Enum.FillDirection.Horizontal
+	buttonLayout.FillDirection       = Enum.FillDirection.Horizontal
 	buttonLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 	buttonLayout.VerticalAlignment   = Enum.VerticalAlignment.Center
-	buttonLayout.Padding        = UDim.new(0, 10)
-	buttonLayout.SortOrder      = Enum.SortOrder.LayoutOrder
-	buttonLayout.Parent         = buttonHolder
+	buttonLayout.Padding             = UDim.new(0, 10)
+	buttonLayout.SortOrder           = Enum.SortOrder.LayoutOrder
+	buttonLayout.Parent              = buttonHolder
 
 	local function makeButton(data, order)
 		local btn = Instance.new("TextButton")
-		btn.Size                  = UDim2.fromOffset(90, 50)
-		btn.BackgroundColor3      = data.color
-		btn.BorderSizePixel       = 0
-		btn.Text                  = data.label
-		btn.TextColor3            = Color3.fromRGB(255, 255, 255)
-		btn.Font                  = Enum.Font.GothamBold
-		btn.TextSize              = 13
-		btn.AutoButtonColor       = false
-		btn.LayoutOrder           = order
-		btn.ZIndex                = 4
-		btn.Parent                = buttonHolder
+		btn.Size            = UDim2.fromOffset(90, 50)
+		btn.BackgroundColor3 = data.color
+		btn.BorderSizePixel = 0
+		btn.Text            = data.label
+		btn.TextColor3      = Color3.fromRGB(255, 255, 255)
+		btn.Font            = Enum.Font.GothamBold
+		btn.TextSize        = 13
+		btn.AutoButtonColor = false
+		btn.LayoutOrder     = order
+		btn.ZIndex          = 4
+		btn.Parent          = buttonHolder
 
 		local btnCorner = Instance.new("UICorner")
 		btnCorner.CornerRadius = UDim.new(0, 10)
 		btnCorner.Parent       = btn
 
 		local btnStroke = Instance.new("UIStroke")
-		btnStroke.Color       = Color3.fromRGB(255, 255, 255)
-		btnStroke.Thickness   = 1
+		btnStroke.Color        = Color3.fromRGB(255, 255, 255)
+		btnStroke.Thickness    = 1
 		btnStroke.Transparency = 0.75
-		btnStroke.Parent      = btn
+		btnStroke.Parent       = btn
 
-		-- Hover
 		btn.MouseEnter:Connect(function()
 			TweenService:Create(btn, TweenInfo.new(0.12), {
 				BackgroundColor3 = data.color:Lerp(Color3.fromRGB(255,255,255), 0.18),
@@ -337,9 +328,8 @@ local function createModeUI(onSelected)
 		end)
 
 		btn.MouseButton1Click:Connect(function()
-			-- Animate out
 			TweenService:Create(card, TweenInfo.new(0.25, Enum.EasingStyle.Back, Enum.EasingDirection.In), {
-				Size = UDim2.fromOffset(340, 0),
+				Size     = UDim2.fromOffset(340, 0),
 				Position = UDim2.new(0.5, 0, 0.5, 115),
 			}):Play()
 			TweenService:Create(blur, TweenInfo.new(0.25), {
@@ -358,7 +348,6 @@ local function createModeUI(onSelected)
 		makeButton(data, i)
 	end
 
-	-- Credit line
 	local credit = Instance.new("TextLabel")
 	credit.Size                  = UDim2.new(1, -20, 0, 20)
 	credit.Position              = UDim2.new(0, 10, 1, -28)
@@ -371,7 +360,6 @@ local function createModeUI(onSelected)
 	credit.ZIndex                = 3
 	credit.Parent                = card
 
-	-- ── Drag logic ────────────────────────────────────────────
 	local dragging   = false
 	local dragOffset = Vector2.zero
 
@@ -407,9 +395,8 @@ local function createModeUI(onSelected)
 		end
 	end)
 
-	-- Entrance animation
-	card.Size = UDim2.fromOffset(340, 0)
-	card.Position = UDim2.new(0.5, 0, 0.5, 115)
+	card.Size        = UDim2.fromOffset(340, 0)
+	card.Position    = UDim2.new(0.5, 0, 0.5, 115)
 	card.AnchorPoint = Vector2.new(0.5, 0.5)
 	blur.BackgroundTransparency = 1
 
@@ -454,6 +441,7 @@ end
 -- ================================================================
 --  SMALL HELPERS
 -- ================================================================
+
 local function clamp01(x)  return math.clamp(x, 0, 1) end
 
 local function smoothstep(edge0, edge1, x)
@@ -473,6 +461,7 @@ end
 -- ================================================================
 --  ANIMATION SAMPLING
 -- ================================================================
+
 local function getMotorWeight(name: string): number
 	name = name:lower()
 	if name == "rootjoint" or name == "root" then return 1.00 end
@@ -506,8 +495,185 @@ local function cframeDeltaToLocalVectors(prevCF: CFrame, currentCF: CFrame, dt: 
 end
 
 -- ================================================================
+--  WELD DETECTION
+-- ================================================================
+
+--[[
+	Finds the AccessoryWeld that controls this handle.
+	Roblox names the auto-generated weld "AccessoryWeld"; we prefer
+	that over a generic Weld search so we never accidentally grab an
+	internal decoration weld that some accessories contain.
+]]
+local function findAccessoryWeld(handle)
+	-- Preferred: the canonical AccessoryWeld child
+	local named = handle:FindFirstChild("AccessoryWeld")
+	if named and named:IsA("Weld") then return named end
+
+	-- Fallback: poll for any Weld (original behaviour)
+	for _ = 1, 30 do
+		local w = handle:FindFirstChildWhichIsA("Weld")
+		if w then return w end
+		task.wait(0.05)
+	end
+
+	return nil
+end
+
+-- ================================================================
+--  SMART PIVOT DETECTION
+-- ================================================================
+
+--[[
+	Returns the best rotation pivot (in Handle-local space).
+
+	Priority order:
+	  1. Named Attachment  — designer-specified; most accurate for
+	     purpose-built accessories (AccessoryAttachment etc.)
+	  2. Generic Attachment that sits near the weld C0 position —
+	     avoids using decorative attachments far from the joint.
+	  3. Geometric face-snap — for elongated meshes whose weld C0
+	     sits near their geometric centre, we find which face of the
+	     bounding box is nearest to Part0 and lerp the pivot toward
+	     that face.  This naturally places the pivot at the "root"
+	     end of a tail or the shoulder end of a wing.
+	  4. weld.C0.Position — original behaviour, always safe.
+]]
+local NAMED_ATTACHMENT_CANDIDATES = {
+	"AccessoryAttachment",
+	"BodyBackAttachment",
+	"WaistBackAttachment",
+	"TailAttachment",
+	"WingAttachment",
+	"NeckAttachment",
+	"RootAttachment",
+}
+
+local function findBestPivot(handle, weld, part0)
+	-- 1. Named attachment
+	for _, name in ipairs(NAMED_ATTACHMENT_CANDIDATES) do
+		local att = handle:FindFirstChild(name)
+		if att and att:IsA("Attachment") then
+			return att.Position
+		end
+	end
+
+	-- 2. Generic attachment — only if it's reasonably close to the weld joint
+	local att = handle:FindFirstChildOfClass("Attachment")
+	if att then
+		local maxDim = math.max(handle.Size.X, handle.Size.Y, handle.Size.Z)
+		if (att.Position - weld.C0.Position).Magnitude < maxDim * 0.55 then
+			return att.Position
+		end
+	end
+
+	-- 3. Geometric face-snap
+	--    Find which face-centre of the bounding box is nearest to part0.
+	--    Only apply if the result differs meaningfully from C0 (avoids
+	--    shifting the pivot on accessories that are already centred correctly,
+	--    e.g. devil-horn pairs whose C0 is intentionally centred).
+	local ok, part0Local = pcall(function()
+		return handle.CFrame:PointToObjectSpace(part0.Position)
+	end)
+
+	if ok then
+		local half  = handle.Size * 0.5
+		local faces = {
+			Vector3.new(-half.X, 0, 0), Vector3.new( half.X, 0, 0),
+			Vector3.new(0, -half.Y, 0), Vector3.new(0,  half.Y, 0),
+			Vector3.new(0, 0, -half.Z), Vector3.new(0, 0,  half.Z),
+		}
+
+		local bestFace, bestDist = Vector3.zero, math.huge
+		for _, face in ipairs(faces) do
+			local d = (face - part0Local).Magnitude
+			if d < bestDist then bestDist = d; bestFace = face end
+		end
+
+		-- Only shift if the face is meaningfully different from C0.
+		-- We lerp rather than snap so we don't fully discard the original
+		-- C0 intent (some accessories deliberately offset their pivot).
+		local shiftDist = (bestFace - weld.C0.Position).Magnitude
+		if shiftDist > handle.Size.Magnitude * 0.12 then
+			return weld.C0.Position:Lerp(bestFace, 0.55)
+		end
+	end
+
+	-- 4. Fallback
+	return weld.C0.Position
+end
+
+-- ================================================================
+--  SIZE-BASED CONFIG SCALING
+-- ================================================================
+
+--[[
+	Automatically tunes physics parameters for accessories that are
+	significantly larger than a "standard" reference (~3 studs on the
+	longest axis).
+
+	Large accessories receive:
+	  • Higher damping   — heavier object, more velocity resistance.
+	  • Wider deadzones  — prevents micro-inputs from jostling a large tail.
+	  • Lower inertia    — avoids exaggerated over-swing on a big mesh.
+	  • Calmer chaos     — secondary noise looks like jitter on big tails.
+	  • Gentler wag      — idle sway should feel weighty, not frantic.
+	  • Sluggish trail   — large object reacts more slowly to direction changes.
+	  • Softer springs   — oscillates at a lower, more natural frequency.
+	  • Higher whip gate — requires stronger input to trigger the impulse.
+
+	Returns the original table unchanged for accessories within ±15 % of
+	the reference size so standard accessories pay zero overhead.
+]]
+local SCALE_REF_SIZE = 3.0  -- studs (longest axis of a "reference" accessory)
+
+local function scaleConfigForSize(handle, baseConfig)
+	local maxDim = math.max(handle.Size.X, handle.Size.Y, handle.Size.Z)
+	local scale  = math.clamp(maxDim / SCALE_REF_SIZE, 0.5, 5.0)
+
+	if scale <= 1.15 then return baseConfig end  -- standard size — no changes
+
+	local cfg    = {}
+	for k, v in pairs(baseConfig) do cfg[k] = v end  -- shallow copy
+
+	local excess = scale - 1.0  -- 0 at reference, positive above it
+
+	-- Heavier feel
+	cfg.DAMPING              = baseConfig.DAMPING      * (1 + excess * 0.40)
+	cfg.ROLL_DAMPING         = baseConfig.ROLL_DAMPING * (1 + excess * 0.35)
+
+	-- Less twitchy on small inputs
+	cfg.SIDE_DEADZONE        = baseConfig.SIDE_DEADZONE    * (1 + excess * 0.30)
+	cfg.FORWARD_DEADZONE     = baseConfig.FORWARD_DEADZONE * (1 + excess * 0.25)
+
+	-- Less over-swing
+	cfg.INERTIA_SCALE        = baseConfig.INERTIA_SCALE / (1 + excess * 0.35)
+
+	-- Calmer secondary noise
+	cfg.CHAOS_STRENGTH       = baseConfig.CHAOS_STRENGTH / (1 + excess * 0.60)
+
+	-- Gentler idle sway
+	cfg.WAG_AMPLITUDE              = baseConfig.WAG_AMPLITUDE              / (1 + excess * 0.30)
+	cfg.WAG_SECONDARY_AMPLITUDE    = baseConfig.WAG_SECONDARY_AMPLITUDE    / (1 + excess * 0.30)
+	cfg.WAG_PITCH_BOB              = baseConfig.WAG_PITCH_BOB              / (1 + excess * 0.20)
+	cfg.WAG_ROLL_AMPLITUDE         = baseConfig.WAG_ROLL_AMPLITUDE         / (1 + excess * 0.20)
+
+	-- Sluggish trail (more inertia in direction tracking)
+	cfg.MOTION_TRAIL_SMOOTHING     = baseConfig.MOTION_TRAIL_SMOOTHING / (1 + excess * 0.20)
+
+	-- Softer springs (lower natural frequency)
+	cfg.STIFFNESS                  = baseConfig.STIFFNESS      / (1 + excess * 0.25)
+	cfg.ROLL_STIFFNESS             = baseConfig.ROLL_STIFFNESS / (1 + excess * 0.25)
+
+	-- Stronger input needed to trigger whip impulse
+	cfg.WHIP_THRESHOLD             = baseConfig.WHIP_THRESHOLD * (1 + excess * 0.20)
+
+	return cfg
+end
+
+-- ================================================================
 --  CORE PHYSICS SETUP
 -- ================================================================
+
 local activeConnections = {}
 
 local function cleanupAll()
@@ -525,12 +691,8 @@ local function setupPhysicsAccessory(accessory, char, CONFIG)
 		warn("[TailPhysics] No Handle:", accessory.Name); return
 	end
 
-	local weld
-	for _ = 1, 30 do
-		weld = handle:FindFirstChildWhichIsA("Weld")
-		if weld then break end
-		task.wait(0.05)
-	end
+	-- Use smart weld finder
+	local weld = findAccessoryWeld(handle)
 	if not weld then
 		warn("[TailPhysics] No Weld:", accessory.Name); return
 	end
@@ -546,9 +708,12 @@ local function setupPhysicsAccessory(accessory, char, CONFIG)
 		warn("[TailPhysics] Missing Humanoid or HRP:", accessory.Name); return
 	end
 
-	-- Capture rest pose
+	-- Auto-scale config for large accessories before anything else
+	CONFIG = scaleConfigForSize(handle, CONFIG)
+
+	-- Capture rest pose using smart pivot detection
 	local baseC0    = weld.C0
-	local pivotPos  = baseC0.Position
+	local pivotPos  = findBestPivot(handle, weld, part0)
 	local baseC0Rot = CFrame.new(-pivotPos.X, -pivotPos.Y, -pivotPos.Z) * baseC0
 
 	-- ── Physics state ──────────────────────────────────────────
@@ -561,6 +726,15 @@ local function setupPhysicsAccessory(accessory, char, CONFIG)
 	local lastRootPos = root.Position
 	local firstFrame  = true
 
+	-- ── Idle tracking ──────────────────────────────────────────
+	--   When the character has been standing still long enough we
+	--   apply a gentle velocity bleed so residual spring energy
+	--   doesn't sustain micro-oscillations indefinitely.
+	local idleTime          = 0
+	local IDLE_SPEED_THRESH = 0.6   -- stud/s below which we count as "idle"
+	local IDLE_BLEED_DELAY  = 1.8   -- seconds before bleed activates
+	local IDLE_BLEED_RATE   = 0.018 -- fraction of velocity removed per frame
+
 	-- ── Rotation tracking ─────────────────────────────────────
 	local prevRootCF      = root.CFrame
 	local smoothedYawRate = 0
@@ -570,19 +744,14 @@ local function setupPhysicsAccessory(accessory, char, CONFIG)
 	local whipCooldown    = 0
 
 	-- ── Wobble detection & stabilisation ──────────────────────
-	-- Wobbling = velocity sign reversing faster than the spring
-	-- can damp it, causing runaway oscillation.
-	-- Detection: count sign-flip events per axis; each flip
-	-- increments a score that decays naturally over time.
-	-- When score >= threshold the stabiliser engages.
 	local WOBBLE = {
-		FLIP_DECAY           = 7,     -- score units shed per second (passive decay)
-		FLIP_THRESHOLD       = 5,     -- score that triggers stabilisation
-		MIN_VEL              = 0.6,   -- |vel| must exceed this for a flip to count
-		HARD_VEL_LIMIT       = 35,    -- hard instantaneous cap on any single velocity
-		STABILIZE_DURATION   = 0.45,  -- seconds of recovery after trigger
-		STABILIZE_VEL_DRAG   = 0.88,  -- velocity multiplied by this per frame during recovery
-		STABILIZE_ANGLE_PULL = 0.06,  -- fraction angles are pulled toward 0 per frame
+		FLIP_DECAY           = 7,
+		FLIP_THRESHOLD       = 5,
+		MIN_VEL              = 0.6,
+		HARD_VEL_LIMIT       = 35,
+		STABILIZE_DURATION   = 0.45,
+		STABILIZE_VEL_DRAG   = 0.88,
+		STABILIZE_ANGLE_PULL = 0.06,
 	}
 
 	local yawFlipScore,   prevYawVelSign   = 0, 0
@@ -607,7 +776,10 @@ local function setupPhysicsAccessory(accessory, char, CONFIG)
 	local conn
 	conn = RunService.Heartbeat:Connect(function(dt)
 		dt = math.clamp(dt, 0.001, 0.1)
-		accumulator += dt
+
+		-- Cap accumulator: prevents a single lag spike from
+		-- firing dozens of sub-steps and amplifying energy.
+		accumulator = math.min(accumulator + dt, CONFIG.TIMESTEP * 8)
 		wagTime     += dt
 		whipCooldown = math.max(0, whipCooldown - dt)
 
@@ -643,11 +815,11 @@ local function setupPhysicsAccessory(accessory, char, CONFIG)
 		local moveLocal  = root.CFrame:VectorToObjectSpace(moveIntent)
 
 		-- ── Rotation tracking ─────────────────────────────────
-		local rotDelta    = prevRootCF:Inverse() * root.CFrame
+		local rotDelta       = prevRootCF:Inverse() * root.CFrame
 		local rotAxis, rotAngle = rotDelta:ToAxisAngle()
-		local rawYawRate  = rotAxis.Y * rotAngle / math.max(dt, 1e-3)
-		smoothedYawRate   = smoothedYawRate + (rawYawRate - smoothedYawRate) * CONFIG.ROTATION_SMOOTHING
-		prevRootCF        = root.CFrame
+		local rawYawRate     = rotAxis.Y * rotAngle / math.max(dt, 1e-3)
+		smoothedYawRate      = smoothedYawRate + (rawYawRate - smoothedYawRate) * CONFIG.ROTATION_SMOOTHING
+		prevRootCF           = root.CFrame
 
 		-- ── Animation / pose sampling ─────────────────────────
 		local bodyRelativeCF  = root.CFrame:ToObjectSpace(part0.CFrame)
@@ -696,6 +868,17 @@ local function setupPhysicsAccessory(accessory, char, CONFIG)
 		local effectiveLocalVel = smoothedLocalVel
 		effectiveLocalVel += smoothedAnimLinear * 0.20
 
+		-- ── Idle time accumulation ────────────────────────────
+		--   Track how long the character has been effectively still.
+		--   We measure the smoothed velocity magnitude so brief pauses
+		--   mid-walk don't falsely trigger the bleed.
+		local currentSpeed = effectiveLocalVel.Magnitude
+		if currentSpeed < IDLE_SPEED_THRESH then
+			idleTime = idleTime + dt
+		else
+			idleTime = 0
+		end
+
 		-- ── Direction-change WHIP impulse ─────────────────────
 		local flatVel   = Vector3.new(effectiveLocalVel.X, 0, effectiveLocalVel.Z)
 		local flatSpeed = flatVel.Magnitude
@@ -704,7 +887,7 @@ local function setupPhysicsAccessory(accessory, char, CONFIG)
 			if prevMotionDir.Magnitude > 0.1 then
 				local dotDir = flatDir:Dot(prevMotionDir)
 				if dotDir < -0.35 and flatSpeed >= CONFIG.WHIP_THRESHOLD and whipCooldown <= 0
-					and stabilizeTimer <= 0 then   -- suppress during wobble recovery
+					and stabilizeTimer <= 0 then
 					yawVel   += -effectiveLocalVel.X * CONFIG.INERTIA_SCALE * CONFIG.WHIP_STRENGTH * 60
 					pitchVel += effectiveLocalVel.Z  * CONFIG.INERTIA_SCALE * CONFIG.WHIP_STRENGTH * 60
 					rollVel  += -effectiveLocalVel.X * CONFIG.SIDE_TO_ROLL  * CONFIG.WHIP_STRENGTH * 40
@@ -748,29 +931,24 @@ local function setupPhysicsAccessory(accessory, char, CONFIG)
 			local inversionStrength = CONFIG.MIN_INVERSION_STRENGTH +
 				(CONFIG.MAX_INVERSION_STRENGTH - CONFIG.MIN_INVERSION_STRENGTH) * speedFactor
 
-			-- Base targets
 			local targetYaw   = -sideMotion * CONFIG.INERTIA_SCALE * yawGate
 			local targetPitch = (-motion.Z  * CONFIG.INERTIA_SCALE * 0.55) * inversionStrength
 			targetPitch += forwardMotion  * CONFIG.FORWARD_DRAG_BIAS * inversionStrength
 			targetPitch -= backwardMotion * CONFIG.FORWARD_DRAG_BIAS * (0.45 + 0.55 * speedFactor)
 
-			-- Rotation influence
 			targetYaw   += -smoothedYawRate * CONFIG.ROTATION_YAW_INFLUENCE
 			targetPitch += math.abs(smoothedYawRate) * CONFIG.ROTATION_PITCH_INFLUENCE * 0.015
 
-			-- Animation pose corrections
 			targetYaw   += smoothedAnimAngular.Y * 0.035
 			targetYaw   += smoothedAnimLinear.X  * 0.006
 			targetPitch += -smoothedAnimAngular.X * 0.045
 			targetPitch += -smoothedAnimLinear.Z  * 0.012
 
-			-- Natural coupling
 			targetPitch += math.abs(targetYaw) * CONFIG.YAW_TO_PITCH_COUPLING
 			targetYaw   += pitchAngle  * CONFIG.PITCH_TO_YAW_COUPLING
 			targetPitch += yawVel      * CONFIG.YAW_VELOCITY_TO_PITCH
 			targetYaw   += pitchVel    * CONFIG.PITCH_VELOCITY_TO_YAW
 
-			-- Roll target
 			local targetRoll = yawAngle * CONFIG.YAW_TO_ROLL
 				+ sideMotion * CONFIG.SIDE_TO_ROLL
 				- smoothedYawRate * CONFIG.ROTATION_ROLL_INFLUENCE * 0.04
@@ -782,8 +960,11 @@ local function setupPhysicsAccessory(accessory, char, CONFIG)
 			local chaosWaveB   = math.cos(chaosPhase * 2.3 + seed * 5.7)
 			local chaosWaveC   = math.sin(chaosPhase * 0.9 + seed * 13.3)
 
-			local chaosTargetYaw   = (chaosWaveA * 0.65 + chaosWaveB * 0.35) * CONFIG.CHAOS_STRENGTH * chaoticDrive
-			local chaosTargetPitch = (chaosWaveC * 0.70 + chaosWaveA * 0.30) * (CONFIG.CHAOS_STRENGTH * 0.72) * chaoticDrive
+			-- Suppress chaos during idle to prevent resting micro-jitter
+			local chaosIdleSuppress = math.max(0, 1 - smoothstep(IDLE_BLEED_DELAY, IDLE_BLEED_DELAY + 1.5, idleTime))
+
+			local chaosTargetYaw   = (chaosWaveA * 0.65 + chaosWaveB * 0.35) * CONFIG.CHAOS_STRENGTH * chaoticDrive * chaosIdleSuppress
+			local chaosTargetPitch = (chaosWaveC * 0.70 + chaosWaveA * 0.30) * (CONFIG.CHAOS_STRENGTH * 0.72) * chaoticDrive * chaosIdleSuppress
 
 			chaosYawVel   += ((chaosTargetYaw   - chaosYaw)   * CONFIG.CHAOS_RESPONSE - chaosYawVel   * (1 - CONFIG.CHAOS_DAMPING)) * ts * 60
 			chaosPitchVel += ((chaosTargetPitch - chaosPitch) * CONFIG.CHAOS_RESPONSE - chaosPitchVel * (1 - CONFIG.CHAOS_DAMPING)) * ts * 60
@@ -804,33 +985,45 @@ local function setupPhysicsAccessory(accessory, char, CONFIG)
 			targetPitch += math.abs(primaryWag) * CONFIG.WAG_PITCH_BOB * idleStrength
 			targetRoll  += math.sin(wagTime * CONFIG.WAG_ROLL_SPEED) * CONFIG.WAG_ROLL_AMPLITUDE * idleStrength
 
-			-- Semi-implicit Euler integration
-			yawVel    += (-CONFIG.STIFFNESS * (yawAngle   - targetYaw)   - CONFIG.DAMPING * yawVel)   * ts
+			-- Semi-implicit Euler
+			yawVel    += (-CONFIG.STIFFNESS      * (yawAngle   - targetYaw)   - CONFIG.DAMPING      * yawVel)   * ts
 			yawAngle  += yawVel   * ts
 
-			pitchVel  += (-CONFIG.STIFFNESS * (pitchAngle - targetPitch) - CONFIG.DAMPING * pitchVel) * ts
+			pitchVel  += (-CONFIG.STIFFNESS      * (pitchAngle - targetPitch) - CONFIG.DAMPING      * pitchVel) * ts
 			pitchAngle+= pitchVel * ts
 
-			rollVel   += (-CONFIG.ROLL_STIFFNESS * (rollAngle - targetRoll) - CONFIG.ROLL_DAMPING * rollVel) * ts
+			rollVel   += (-CONFIG.ROLL_STIFFNESS * (rollAngle  - targetRoll)  - CONFIG.ROLL_DAMPING * rollVel)  * ts
 			rollAngle += rollVel  * ts
 
 			accumulator -= CONFIG.TIMESTEP
 		end
 
-		-- ── Wobble detection & auto-correction ────────────────────
-		-- Layer 1: hard velocity cap — stops any single runaway frame
-		-- from feeding amplified energy into the next step.
+		-- ── Idle velocity bleed ───────────────────────────────
+		--   Once the character has been still for IDLE_BLEED_DELAY seconds,
+		--   gently drain residual spring velocity so the accessory settles
+		--   to its wag-only rest pose instead of drifting indefinitely.
+		--   Strength ramps up smoothly so the transition is imperceptible.
+		if idleTime > IDLE_BLEED_DELAY then
+			local bleedStrength = math.min(1, (idleTime - IDLE_BLEED_DELAY) * 0.5)
+			local velDecay      = 1 - IDLE_BLEED_RATE * bleedStrength * (dt * 60)
+			yawVel   *= velDecay
+			pitchVel *= velDecay
+			rollVel  *= velDecay
+		end
+
+		-- ── Wobble detection & auto-correction ────────────────
+		-- Layer 1: hard velocity cap
 		yawVel   = math.clamp(yawVel,   -WOBBLE.HARD_VEL_LIMIT, WOBBLE.HARD_VEL_LIMIT)
 		pitchVel = math.clamp(pitchVel, -WOBBLE.HARD_VEL_LIMIT, WOBBLE.HARD_VEL_LIMIT)
 		rollVel  = math.clamp(rollVel,  -WOBBLE.HARD_VEL_LIMIT, WOBBLE.HARD_VEL_LIMIT)
 
-		-- Layer 2: decay flip-score counters over time.
+		-- Layer 2: decay flip-score counters over time
 		local flipDecay = dt * WOBBLE.FLIP_DECAY
 		yawFlipScore   = math.max(0, yawFlipScore   - flipDecay)
 		pitchFlipScore = math.max(0, pitchFlipScore - flipDecay)
 		rollFlipScore  = math.max(0, rollFlipScore  - flipDecay)
 
-		-- Count genuine velocity sign reversals (ignore noise near zero).
+		-- Layer 3: count velocity sign reversals per axis
 		local function trackFlip(vel, lastSign, score)
 			local s = vel >  WOBBLE.MIN_VEL and  1
 				or vel < -WOBBLE.MIN_VEL and -1
@@ -838,8 +1031,6 @@ local function setupPhysicsAccessory(accessory, char, CONFIG)
 			if s ~= 0 and lastSign ~= 0 and s ~= lastSign then
 				score += 1
 			end
-			-- Preserve last known non-zero sign so short zero-crossings
-			-- (during target drag) don't reset the reference.
 			return s ~= 0 and s or lastSign, score
 		end
 
@@ -847,29 +1038,26 @@ local function setupPhysicsAccessory(accessory, char, CONFIG)
 		prevPitchVelSign, pitchFlipScore = trackFlip(pitchVel, prevPitchVelSign, pitchFlipScore)
 		prevRollVelSign,  rollFlipScore  = trackFlip(rollVel,  prevRollVelSign,  rollFlipScore)
 
-		-- Layer 3: trigger stabiliser when any axis is wobbling.
+		-- Layer 4: trigger stabiliser when any axis is wobbling
 		if yawFlipScore   >= WOBBLE.FLIP_THRESHOLD
 			or pitchFlipScore >= WOBBLE.FLIP_THRESHOLD
 			or rollFlipScore  >= WOBBLE.FLIP_THRESHOLD then
 			stabilizeTimer = WOBBLE.STABILIZE_DURATION
-			-- Reset counters so a fresh trigger needs fresh evidence.
 			yawFlipScore, pitchFlipScore, rollFlipScore = 0, 0, 0
 		end
 
-		-- Layer 4: apply progressive recovery drag.
-		-- Strength is 1 at the start of the window and smoothly
-		-- fades to 0, so the transition back to normal feels natural.
+		-- Layer 5: progressive recovery drag
 		if stabilizeTimer > 0 then
-			stabilizeTimer     = math.max(0, stabilizeTimer - dt)
-			local strength     = stabilizeTimer / WOBBLE.STABILIZE_DURATION
-			local velMul       = 1 - (1 - WOBBLE.STABILIZE_VEL_DRAG)   * strength
-			local angleBleed   = WOBBLE.STABILIZE_ANGLE_PULL * strength
+			stabilizeTimer   = math.max(0, stabilizeTimer - dt)
+			local strength   = stabilizeTimer / WOBBLE.STABILIZE_DURATION
+			local velMul     = 1 - (1 - WOBBLE.STABILIZE_VEL_DRAG)   * strength
+			local angleBleed = WOBBLE.STABILIZE_ANGLE_PULL * strength
 			yawVel    *= velMul;   yawAngle   *= (1 - angleBleed)
 			pitchVel  *= velMul;   pitchAngle *= (1 - angleBleed)
 			rollVel   *= velMul;   rollAngle  *= (1 - angleBleed)
 		end
 
-		-- Smaer: speed-adaptive clamp
+		-- Smear: speed-adaptive angle clamp
 		local smearFactor = smoothstep(0, CONFIG.SMEAR_SPEED_FULL, motionMemory.Magnitude)
 		local dynamicMax  = CONFIG.MAX_ANGLE + (CONFIG.SMEAR_MAX_ANGLE - CONFIG.MAX_ANGLE) * smearFactor
 
@@ -888,6 +1076,7 @@ end
 -- ================================================================
 --  CHARACTER INITIALISATION
 -- ================================================================
+
 local function initCharacter(char, mode)
 	character = char
 	cleanupAll()
@@ -922,6 +1111,7 @@ end
 -- ================================================================
 --  ENTRY POINT — show UI, then init on selection
 -- ================================================================
+
 createModeUI(function(selectedMode)
 	initCharacter(character, selectedMode)
 
