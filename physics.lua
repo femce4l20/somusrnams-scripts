@@ -93,15 +93,28 @@ CONFIGS.wings = {
 
 	-- Fixed timestep
 	TIMESTEP   = 1 / 120,
+
+	-- [FLOOR DETECTION] Floor avoidance settings
+	-- FLOOR_CHECK_DIST    : ray length (studs) cast downward from the handle
+	-- FLOOR_MIN_PART_SIZE : avg XZ size below which a part is ignored (small props)
+	-- FLOOR_PUSH_STRENGTH : spring force (rad/s²) applied when near the floor
+	-- FLOOR_CONTACT_DIST  : distance (studs) considered a hard contact
+	FLOOR_CHECK_DIST    = 2.0,
+	FLOOR_MIN_PART_SIZE = 4,
+	FLOOR_PUSH_STRENGTH = 100,
+	FLOOR_CONTACT_DIST  = 0.35,
+
+	-- [SIDE LAY] Resting roll bias – 0 for wings (no side lean by default)
+	RESTING_ROLL_BIAS = 0,
 }
 
 CONFIGS.tails = {
-	-- Spring-damper physics (stronger + more damped)
-	STIFFNESS       = 40,     -- slightly higher to resist lag buildup
-	DAMPING         = 0.85,   -- MUCH higher to kill infinite oscillation
-	INERTIA_SCALE   = 0.045,  -- reduced so velocity doesn't stack endlessly
+	-- Spring-damper physics
+	STIFFNESS       = 60,
+	DAMPING         = 1.85,
+	INERTIA_SCALE   = 0.045,
 
-	-- Deadzones (slightly increased for heavy tails)
+	-- Deadzones
 	SIDE_DEADZONE     = 2.1,
 	FORWARD_DEADZONE  = 0.75,
 
@@ -112,25 +125,25 @@ CONFIGS.tails = {
 	YAW_UNLOCK_ANGLE       = math.rad(12),
 	YAW_FULL_UNLOCK        = math.rad(24),
 
-	-- Momentum / trailing behavior (critical fixes)
-	MOTION_TRAIL_SMOOTHING   = 0.20,  -- smoother = less jitter stacking
-	MOTION_ACCEL_INFLUENCE   = 0.035, -- reduced to stop runaway acceleration
-	TRAIL_RELEASE            = 0.22,  -- MUCH stronger decay (key fix)
+	-- Momentum / trailing behavior
+	MOTION_TRAIL_SMOOTHING   = 0.20,
+	MOTION_ACCEL_INFLUENCE   = 0.035,
+	TRAIL_RELEASE            = 0.22,
 
-	-- Rotation tracking (less reactive)
+	-- Rotation tracking
 	ROTATION_YAW_INFLUENCE   = 0.035,
 	ROTATION_ROLL_INFLUENCE  = 0.45,
 	ROTATION_PITCH_INFLUENCE = 0.08,
-	ROTATION_SMOOTHING       = 0.30,  -- smoother = more stable
+	ROTATION_SMOOTHING       = 0.30,
 
-	-- Roll axis (more controlled)
+	-- Roll axis
 	ROLL_STIFFNESS   = 28,
 	ROLL_DAMPING     = 0.75,
 	MAX_ROLL_ANGLE   = math.rad(32),
 	YAW_TO_ROLL      = 0.22,
 	SIDE_TO_ROLL     = 0.014,
 
-	-- Direction-change "whip" (reduced energy injection)
+	-- Direction-change "whip"
 	WHIP_THRESHOLD   = 4.5,
 	WHIP_STRENGTH    = 1.1,
 	WHIP_COOLDOWN    = 0.28,
@@ -139,7 +152,7 @@ CONFIGS.tails = {
 	SMEAR_MAX_ANGLE     = math.rad(75),
 	SMEAR_SPEED_FULL    = 24,
 
-	-- Idle wag (toned down for heavy mass feel)
+	-- Idle wag
 	WAG_SPEED               = 0.8,
 	WAG_AMPLITUDE           = 0.12,
 	WAG_FADE_SPEED          = 0.12,
@@ -155,13 +168,13 @@ CONFIGS.tails = {
 	ANIMATION_MOTOR_INFLUENCE   = 0.25,
 	ANIMATION_BLEND_SMOOTHING   = 0.35,
 
-	-- Coupling (reduced feedback loops)
+	-- Coupling
 	YAW_TO_PITCH_COUPLING       = 0.060,
 	PITCH_TO_YAW_COUPLING       = 0.018,
 	YAW_VELOCITY_TO_PITCH       = 0.0015,
 	PITCH_VELOCITY_TO_YAW       = 0.0010,
 
-	-- Chaotic secondary motion (heavily damped)
+	-- Chaotic secondary motion
 	CHAOS_STRENGTH   = 0.006,
 	CHAOS_RESPONSE   = 0.05,
 	CHAOS_DAMPING    = 0.96,
@@ -171,11 +184,22 @@ CONFIGS.tails = {
 	MIN_INVERSION_STRENGTH   = 0.15,
 	MAX_INVERSION_STRENGTH   = 0.75,
 
-	-- Safety clamps (slightly tighter)
+	-- Safety clamps
 	MAX_ANGLE  = math.rad(60),
 
 	-- Fixed timestep
 	TIMESTEP   = 1 / 120,
+
+	-- [FLOOR DETECTION] Floor avoidance settings
+	FLOOR_CHECK_DIST    = 2.0,
+	FLOOR_MIN_PART_SIZE = 4,
+	FLOOR_PUSH_STRENGTH = 120,
+	FLOOR_CONTACT_DIST  = 0.35,
+
+	-- [SIDE LAY] Resting roll bias – gives the tail a natural sideways lean
+	-- ~18° makes it look like the tail is lazily resting on its side.
+	-- Positive = lean right, negative = lean left (relative to attachment).
+	RESTING_ROLL_BIAS = math.rad(18),
 }
 
 -- ================================================================
@@ -478,7 +502,7 @@ local function createPhysicsEditor(initialMode)
 	openStroke.Parent = openButton
 
 	local panel = Instance.new("Frame")
-	panel.Size = UDim2.fromOffset(360, 390)
+	panel.Size = UDim2.fromOffset(360, 420)
 	panel.Position = UDim2.fromOffset(24, 80)
 	panel.BackgroundColor3 = Color3.fromRGB(18, 18, 24)
 	panel.BorderSizePixel = 0
@@ -571,6 +595,7 @@ local function createPhysicsEditor(initialMode)
 			{ label = "Roll Damping",   key = "ROLL_DAMPING",   min = 0.1, max = 4.0, step = 0.05, decimals = 2 },
 			{ label = "Wag",            key = "WAG_AMPLITUDE",  min = 0.0, max = 0.35, step = 0.01, decimals = 3 },
 			{ label = "Whip",           key = "WHIP_STRENGTH",  min = 0.0, max = 4.0, step = 0.1, decimals = 2 },
+			{ label = "Floor Push",     key = "FLOOR_PUSH_STRENGTH", min = 0, max = 400, step = 10, decimals = 0 },
 		},
 		tails = {
 			{ label = "Stiffness",      key = "STIFFNESS",      min = 10,  max = 120, step = 2,   decimals = 0 },
@@ -580,6 +605,9 @@ local function createPhysicsEditor(initialMode)
 			{ label = "Wag",            key = "WAG_AMPLITUDE",  min = 0.0, max = 0.35, step = 0.01, decimals = 3 },
 			{ label = "Whip",           key = "WHIP_STRENGTH",  min = 0.0, max = 3.0, step = 0.05, decimals = 2 },
 			{ label = "Chaos",          key = "CHAOS_STRENGTH", min = 0.0, max = 0.05, step = 0.001, decimals = 3 },
+			{ label = "Floor Push",     key = "FLOOR_PUSH_STRENGTH", min = 0, max = 400, step = 10, decimals = 0 },
+			-- [SIDE LAY] Exposed in radians; ±0.52 rad ≈ ±30°
+			{ label = "Side Lean",      key = "RESTING_ROLL_BIAS", min = -0.52, max = 0.52, step = 0.02, decimals = 3 },
 		},
 	}
 
@@ -980,6 +1008,7 @@ local function applyScaledConfig(dest, baseConfig, handle)
 	dest.STIFFNESS                  = baseConfig.STIFFNESS      / (1 + excess * 0.25)
 	dest.ROLL_STIFFNESS             = baseConfig.ROLL_STIFFNESS / (1 + excess * 0.25)
 	dest.WHIP_THRESHOLD             = baseConfig.WHIP_THRESHOLD * (1 + excess * 0.20)
+	-- RESTING_ROLL_BIAS is intentionally NOT scaled — it is a fixed aesthetic offset.
 
 	return dest
 end
@@ -1000,7 +1029,8 @@ end
 
 print("made by cvtmvtt <3")
 
-local function setupPhysicsAccessory(accessory, char, baseConfig)
+-- accType is "wings" or "tails" — used to gate type-specific behaviour.
+local function setupPhysicsAccessory(accessory, char, baseConfig, accType)
 	local handle = accessory:FindFirstChild("Handle")
 	if not handle then
 		warn("[TailPhysics] No Handle:", accessory.Name); return
@@ -1021,6 +1051,12 @@ local function setupPhysicsAccessory(accessory, char, baseConfig)
 	if not humanoid or not root then
 		warn("[TailPhysics] Missing Humanoid or HRP:", accessory.Name); return
 	end
+
+	-- ── [FLOOR DETECTION] Raycast params built once per accessory ──────────
+	-- Excludes the whole character so we never hit the player's own parts.
+	local floorRayParams = RaycastParams.new()
+	floorRayParams.FilterDescendantsInstances = { char }
+	floorRayParams.FilterType = Enum.RaycastFilterType.Exclude
 
 	local CONFIG = {}
 	local function refreshConfig()
@@ -1081,6 +1117,12 @@ local function setupPhysicsAccessory(accessory, char, baseConfig)
 	local seed       = (hashString(accessory.Name) % 1000) / 1000
 	local chaosPhase = seed * math.pi * 2
 
+	-- ── [FLOOR DETECTION] Per-frame floor state ─────────────────────────────
+	-- Updated once per Heartbeat before the sub-step loop so every sub-step
+	-- sees the same floor reading (avoids multiple raycasts per frame).
+	local floorProximity = 0   -- 0 = far away, 1 = right at floor level
+	local floorContact   = false  -- true when distance < FLOOR_CONTACT_DIST
+
 	local conn
 	conn = RunService.Heartbeat:Connect(function(dt)
 		dt = math.clamp(dt, 0.001, 0.1)
@@ -1104,6 +1146,31 @@ local function setupPhysicsAccessory(accessory, char, baseConfig)
 		if #animationMotors == 0 then
 			animationMotors = collectAnimationMotors(char)
 		end
+
+		-- ── [FLOOR DETECTION] One raycast per frame ──────────────────────────
+		-- Cast straight down from a point just below the handle centre.
+		-- Small parts (avg XZ footprint < FLOOR_MIN_PART_SIZE) are ignored so
+		-- tiny props on the ground don't trigger false positives.
+		do
+			local origin    = handle.Position + Vector3.new(0, -0.15, 0)
+			local rayDir    = Vector3.new(0, -CONFIG.FLOOR_CHECK_DIST, 0)
+			local result    = workspace:Raycast(origin, rayDir, floorRayParams)
+
+			floorProximity = 0
+			floorContact   = false
+
+			if result then
+				local hp      = result.Instance
+				-- Average of the XZ extents as a footprint proxy.
+				local avgXZ   = (hp.Size.X + hp.Size.Z) * 0.5
+				if avgXZ >= CONFIG.FLOOR_MIN_PART_SIZE then
+					-- proximity goes from 0 (at CHECK_DIST) to 1 (at handle level)
+					floorProximity = 1 - math.clamp(result.Distance / CONFIG.FLOOR_CHECK_DIST, 0, 1)
+					floorContact   = result.Distance <= CONFIG.FLOOR_CONTACT_DIST
+				end
+			end
+		end
+		-- ────────────────────────────────────────────────────────────────────
 
 		local curPos  = root.Position
 		local charVel
@@ -1249,6 +1316,12 @@ local function setupPhysicsAccessory(accessory, char, baseConfig)
 				+ sideMotion * CONFIG.SIDE_TO_ROLL
 				- smoothedYawRate * CONFIG.ROTATION_ROLL_INFLUENCE * 0.04
 
+			-- [SIDE LAY] Blend RESTING_ROLL_BIAS into targetRoll.
+			-- Fades in at idle and blends with dynamic motion so it never
+			-- fights hard direction-change roll forces.
+			local wagFadeEarly = math.max(0, 1 - speed * CONFIG.WAG_FADE_SPEED * 0.5)
+			targetRoll += CONFIG.RESTING_ROLL_BIAS * wagFadeEarly
+
 			chaosPhase += ts * (1.8 + speedFactor * 2.4)
 			local chaoticDrive = clamp01((motionDelta.Magnitude / math.max(CONFIG.SPRINT_SPEED, 1)) * 1.35)
 			local chaosWaveA   = math.sin(chaosPhase * 1.7 + seed * 9.1)
@@ -1277,6 +1350,26 @@ local function setupPhysicsAccessory(accessory, char, baseConfig)
 			targetYaw   += (primaryWag * CONFIG.WAG_AMPLITUDE + secondaryWag * CONFIG.WAG_SECONDARY_AMPLITUDE) * idleStrength
 			targetPitch += math.abs(primaryWag) * CONFIG.WAG_PITCH_BOB * idleStrength
 			targetRoll  += math.sin(wagTime * CONFIG.WAG_ROLL_SPEED) * CONFIG.WAG_ROLL_AMPLITUDE * idleStrength
+
+			-- ── [FLOOR DETECTION] Spring push away from the floor ─────────────
+			-- When the handle is close to a large enough floor part, inject a
+			-- positive pitchVel impulse (positive pitch = upward for a trailing
+			-- tail/wing) each sub-step.  floorProximity is squared so the force
+			-- ramps up sharply only in the last fraction of the detection range.
+			if floorProximity > 0 then
+				local pushForce = floorProximity * floorProximity * CONFIG.FLOOR_PUSH_STRENGTH
+				pitchVel += pushForce * ts
+
+				-- Hard clamp: once we're truly in contact, do not allow pitch to
+				-- droop further into the floor and bleed off downward velocity.
+				if floorContact then
+					if pitchAngle < 0 then
+						pitchAngle = pitchAngle * (1 - 0.25 * (ts * 60))  -- soft pull toward 0
+					end
+					if pitchVel < 0 then pitchVel = 0 end
+				end
+			end
+			-- ─────────────────────────────────────────────────────────────────
 
 			yawVel    += (-CONFIG.STIFFNESS      * (yawAngle   - targetYaw)   - CONFIG.DAMPING      * yawVel)   * ts
 			yawAngle  += yawVel   * ts
@@ -1346,12 +1439,12 @@ local function setupPhysicsAccessory(accessory, char, baseConfig)
 		rollAngle  = math.clamp(rollAngle,  -CONFIG.MAX_ROLL_ANGLE, CONFIG.MAX_ROLL_ANGLE)
 
 		local physRot = CFrame.Angles(pitchAngle, yawAngle, rollAngle)
-		local BACK_OFFSET = -0.2 -- negative = backward
+		local BACK_OFFSET = -0.2
 
-weld.C0 = CFrame.new(pivotPos)
-	* physRot
-	* CFrame.new(0, 0, BACK_OFFSET)
-	* baseC0Rot
+		weld.C0 = CFrame.new(pivotPos)
+			* physRot
+			* CFrame.new(0, 0, BACK_OFFSET)
+			* baseC0Rot
 	end)
 
 	return conn
@@ -1376,7 +1469,8 @@ local function initCharacter(char, mode)
 		if not child:IsA("Accessory") then return end
 		local accType = classifyAccessory(child, mode)
 		if accType then
-			local conn = setupPhysicsAccessory(child, char, EDITABLE_CONFIGS[accType])
+			-- Pass accType so setupPhysicsAccessory can use type-specific logic.
+			local conn = setupPhysicsAccessory(child, char, EDITABLE_CONFIGS[accType], accType)
 			if conn then table.insert(activeConnections, conn) end
 		end
 	end
