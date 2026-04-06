@@ -3,7 +3,7 @@ local TextChatService = game:GetService("TextChatService")
 
 local LocalPlayer = Players.LocalPlayer
 
--- ✅ Prevent running more than once
+-- Prevent running more than once
 if getgenv().CVTMVTT_WELCOME_RAN then
 	return
 end
