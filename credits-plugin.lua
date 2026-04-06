@@ -3,6 +3,12 @@ local TextChatService = game:GetService("TextChatService")
 
 local LocalPlayer = Players.LocalPlayer
 
+-- ✅ Prevent running more than once
+if getgenv().CVTMVTT_WELCOME_RAN then
+	return
+end
+getgenv().CVTMVTT_WELCOME_RAN = true
+
 local TextChannels = TextChatService:WaitForChild("TextChannels")
 
 local ChatChannel = TextChannels:FindFirstChild("RBXGeneral")
@@ -42,9 +48,8 @@ local banner = [[
 
 -- Run once on script start
 task.defer(function()
-	task.wait(1) -- ensure chat is ready
+	task.wait(1)
 
 	systemMessage("Welcome, " .. getDisplayName(LocalPlayer) .. "! I hope you enjoy my scripts!")
-
 	print(banner)
 end)
