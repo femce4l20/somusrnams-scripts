@@ -1,3 +1,6 @@
+-- meow
+
+
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
@@ -7,11 +10,6 @@ local ContentProvider = game:GetService("ContentProvider")
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
--- ============================================================
---  FLING SYSTEM
---  Activates when DropKick (E) animation plays,
---  deactivates automatically when the animation ends.
--- ============================================================
 
 local flingActive = false
 local flingThread = nil
@@ -125,6 +123,9 @@ end)
 -- ============================================================
 
 local keybindActions = {
+	--[[
+	Keys row 1
+	]]
 	{
 		name = "Wave",
 		keyCode = Enum.KeyCode.Q,
@@ -134,14 +135,12 @@ local keybindActions = {
 		priority = Enum.AnimationPriority.Action,
 	},
 	{
-		-- DropKick: fling is applied while this animation plays
-		name = "DropKick",
+		name = "PatHead",
 		keyCode = Enum.KeyCode.E,
-		mode = "press",
-		animationId = "133566007754001",
-		looped = false,
+		mode = "hold",
+		animationId = "140058263980955",
+		looped = true,
 		priority = Enum.AnimationPriority.Action,
-		useFling = true,
 	},
 	{
 		name = "LaidUpJiggle",
@@ -160,34 +159,39 @@ local keybindActions = {
 		priority = Enum.AnimationPriority.Action,
 	},
 	{
-		name = "SitPretty1",
+		name = "CuteSit",
 		keyCode = Enum.KeyCode.Y,
 		mode = "toggle",
-		animationId = "85961795938515",
+		animationId = "73928805853047",
 		looped = true,
 		priority = Enum.AnimationPriority.Action,
 	},
 	{
-		name = "SitPretty2",
+		name = "SitPretty",
 		keyCode = Enum.KeyCode.U,
 		mode = "toggle",
 		animationId = "113986788014462",
 		looped = true,
 		priority = Enum.AnimationPriority.Action,
 	},
+	--[[
+	Keys row 2
+	]]
 	{
-		name = "CuteDanceIdk",
+		-- DropKick
+		name = "DropKick",
 		keyCode = Enum.KeyCode.F,
-		mode = "toggle",
-		animationId = "131673340109237",
-		looped = true,
+		mode = "press",
+		animationId = "133566007754001",
+		looped = false,
 		priority = Enum.AnimationPriority.Action,
+		useFling = true,
 	},
 	{
-		name = "JiggleDance",
+		name = "CuteDanceIdk",
 		keyCode = Enum.KeyCode.G,
 		mode = "toggle",
-		animationId = "125763702777221",
+		animationId = "131673340109237",
 		looped = true,
 		priority = Enum.AnimationPriority.Action,
 	},
@@ -208,13 +212,16 @@ local keybindActions = {
 		priority = Enum.AnimationPriority.Action,
 	},
 	{
-		name = "FeelinMyself",
+		name = "JiggleDance",
 		keyCode = Enum.KeyCode.K,
 		mode = "toggle",
-		animationId = "101385394794634",
+		animationId = "125763702777221",
 		looped = true,
 		priority = Enum.AnimationPriority.Action,
 	},
+	--[[
+	Keys row 3
+	]]
 	{
 		name = "SitOnIt",
 		keyCode = Enum.KeyCode.Z,
@@ -224,22 +231,20 @@ local keybindActions = {
 		priority = Enum.AnimationPriority.Action,
 	},
 	{
-		name = "SitOnIt2",
+		name = "SplitsLay",
 		keyCode = Enum.KeyCode.X,
 		mode = "toggle",
-		animationId = "103890015669349",
+		animationId = "88361934268015",
 		looped = true,
 		priority = Enum.AnimationPriority.Action,
 	},
 	{
-		name = "Splits",
+		name = "Succ/3sum",
 		keyCode = Enum.KeyCode.C,
 		mode = "toggle",
-		animationId = "118947009579831",
+		animationId = "124873747842579",
 		looped = true,
 		priority = Enum.AnimationPriority.Action,
-		startTime = 3.19,
-		endTime = 5.47,
 	},
 	{
 		name = "Bending",
@@ -250,28 +255,30 @@ local keybindActions = {
 		priority = Enum.AnimationPriority.Action,
 	},
 	{
-		name = "Anim_B",
+		name = "Rub/Finger",
 		keyCode = Enum.KeyCode.B,
-		mode = "toggle",
-		animationId = "120446020725705",
+		mode = "hold",
+		animationId = "124575754112740",
 		looped = true,
 		priority = Enum.AnimationPriority.Action,
 	},
 	{
-		name = "Anim_N",
+		name = "SitOnIt2",
 		keyCode = Enum.KeyCode.N,
 		mode = "toggle",
-		animationId = "109716540429732",
+		animationId = "103890015669349",
 		looped = true,
 		priority = Enum.AnimationPriority.Action,
 	},
 	{
-		name = "Anim_M",
+		name = "Splits",
 		keyCode = Enum.KeyCode.M,
 		mode = "toggle",
-		animationId = "140655897836448",
+		animationId = "118947009579831",
 		looped = true,
 		priority = Enum.AnimationPriority.Action,
+		startTime = 3.19,
+		endTime = 5.47,
 	},
 }
 
@@ -354,7 +361,7 @@ local function populateEmoteList()
 		keyLabel.BackgroundTransparency = 1
 		keyLabel.Position = UDim2.new(0.58, 0, 0, 0)
 		keyLabel.Size = UDim2.new(0.18, 0, 1, 0)
-		keyLabel.Font = Enum.Font.GothamSemibold
+		keyLabel.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.SemiBold, Enum.FontStyle.Normal)
 		keyLabel.Text = keyCodeToText(binding.keyCode)
 		keyLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
 		keyLabel.TextSize = 14
@@ -365,7 +372,7 @@ local function populateEmoteList()
 		modeLabel.BackgroundTransparency = 1
 		modeLabel.Position = UDim2.new(0.77, 0, 0, 0)
 		modeLabel.Size = UDim2.new(0.23, 0, 1, 0)
-		modeLabel.Font = Enum.Font.GothamSemibold
+		modeLabel.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.SemiBold, Enum.FontStyle.Normal)
 		modeLabel.Text = modeToText(binding.mode)
 		modeLabel.TextColor3 = Color3.fromRGB(140, 210, 255)
 		modeLabel.TextSize = 14
@@ -446,7 +453,7 @@ local function createEmoteOverlay()
 	local actionHeader = Instance.new("TextLabel")
 	actionHeader.BackgroundTransparency = 1
 	actionHeader.Size = UDim2.new(0.58, 0, 1, 0)
-	actionHeader.Font = Enum.Font.GothamSemibold
+	actionHeader.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.SemiBold, Enum.FontStyle.Normal)
 	actionHeader.Text = "Action"
 	actionHeader.TextColor3 = Color3.fromRGB(150, 150, 150)
 	actionHeader.TextSize = 12
@@ -457,7 +464,7 @@ local function createEmoteOverlay()
 	keyHeader.BackgroundTransparency = 1
 	keyHeader.Position = UDim2.new(0.58, 0, 0, 0)
 	keyHeader.Size = UDim2.new(0.18, 0, 1, 0)
-	keyHeader.Font = Enum.Font.GothamSemibold
+	keyHeader.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.SemiBold, Enum.FontStyle.Normal)
 	keyHeader.Text = "Key"
 	keyHeader.TextColor3 = Color3.fromRGB(150, 150, 150)
 	keyHeader.TextSize = 12
@@ -468,7 +475,7 @@ local function createEmoteOverlay()
 	modeHeader.BackgroundTransparency = 1
 	modeHeader.Position = UDim2.new(0.77, 0, 0, 0)
 	modeHeader.Size = UDim2.new(0.23, 0, 1, 0)
-	modeHeader.Font = Enum.Font.GothamSemibold
+	modeHeader.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.SemiBold, Enum.FontStyle.Normal)
 	modeHeader.Text = "Mode"
 	modeHeader.TextColor3 = Color3.fromRGB(150, 150, 150)
 	modeHeader.TextSize = 12
@@ -1509,10 +1516,14 @@ local function startForCharacter(Character)
 
 	local function getToolAnim(tool)
 		for _, c in ipairs(tool:GetChildren()) do
-			if c.Name == "toolanim" and c:IsA("StringValue") then return c end
+			if c.Name == "toolanim" and c:IsA("StringValue") then
+				return c
+			end
 		end
 		return nil
 	end
+
+	local playToolAnimation -- forward declaration
 
 	local function toolKeyFrameReachedFunc(frameName)
 		if frameName == "End" then
@@ -1520,7 +1531,7 @@ local function startForCharacter(Character)
 		end
 	end
 
-	function playToolAnimation(animName, transitionTime, humanoid, priority)
+	playToolAnimation = function(animName, transitionTime, humanoid, priority)
 		if currentCustomAction then return end
 		local idx = rollAnimation(animName)
 		local anim = animTable[animName][idx].anim
@@ -1531,32 +1542,42 @@ local function startForCharacter(Character)
 				toolAnimTrack:Destroy()
 				transitionTime = 0
 			end
+
 			toolAnimTrack = humanoid:LoadAnimation(anim)
-			if priority then toolAnimTrack.Priority = priority end
+			if priority then
+				toolAnimTrack.Priority = priority
+			end
 			toolAnimTrack:Play(transitionTime)
+
 			toolAnimName = animName
 			toolAnimInstance = anim
 
 			if currentToolAnimKeyframeHandler ~= nil then
 				currentToolAnimKeyframeHandler:Disconnect()
+				currentToolAnimKeyframeHandler = nil
 			end
+
 			currentToolAnimKeyframeHandler = toolAnimTrack.KeyframeReached:Connect(toolKeyFrameReachedFunc)
 		end
 	end
 
 	local function stopToolAnimations()
 		local oldAnim = toolAnimName
+
 		if currentToolAnimKeyframeHandler ~= nil then
 			currentToolAnimKeyframeHandler:Disconnect()
 			currentToolAnimKeyframeHandler = nil
 		end
+
 		toolAnimName = ""
 		toolAnimInstance = nil
+
 		if toolAnimTrack ~= nil then
 			toolAnimTrack:Stop()
 			toolAnimTrack:Destroy()
 			toolAnimTrack = nil
 		end
+
 		return oldAnim
 	end
 
@@ -1785,4 +1806,4 @@ end)
 
 loadstring(game:HttpGet(('https://raw.githubusercontent.com/femce4l20/somusrnams-scripts/refs/heads/main/credits-plugin.lua'),true))()
 wait(0.5)
-loadstring(game:HttpGet(('https://raw.githubusercontent.com/femce4l20/somusrnams-scripts/refs/heads/main/physics.lua'),true))()
+loadstring(game:HttpGet(('https://raw.githubusercontent.com/femce4l20/somusrnams-scripts/refs/heads/main/physics/physics.lua'),true))()
