@@ -1,6 +1,3 @@
--- ================================================================
---  PERF: Localize all frequently-called globals once
--- ================================================================
 local RunService       = game:GetService("RunService")
 local Players          = game:GetService("Players")
 local TweenService     = game:GetService("TweenService")
@@ -645,8 +642,6 @@ local function cleanupAll()
 	end
 	activeConnections = {}
 end
-
-print("made by cvtmvtt <3")
 
 local function setupPhysicsAccessory(accessory, char, baseConfig, accType)
 	local handle = accessory:FindFirstChild("Handle")
