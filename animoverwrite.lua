@@ -7,18 +7,123 @@ local ContentProvider = game:GetService("ContentProvider")
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
---[[ 
-	Custom keybind section.
+-- ============================================================
+--  FLING SYSTEM
+--  Activates when DropKick (E) animation plays,
+--  deactivates automatically when the animation ends.
+-- ============================================================
 
-	Edit these entries to change the key, mode, and animation id.
+local flingActive = false
+local flingThread = nil
+local flingCooldown = false          -- <-- cooldown flag
+local flingCooldownTimer = nil       -- <-- to reset cooldown after delay
 
-	Mode options:
-	- "hold"   = plays while the key is held, then returns to idle on release
-	- "press"  = plays once, then returns to idle when the animation ends
-	- "toggle" = press once to start, press again to stop and return to idle
+local function startFling()
+	if flingActive or flingCooldown then return end   -- <-- cooldown check
+	flingActive = true
 
-	For the Splits keybind (C), startTime and endTime define the ping-pong range.
-]]
+	flingThread = task.spawn(function()
+		local move = 0.1
+		while flingActive do
+			RunService.Heartbeat:Wait()
+			local character = player.Character
+			local rootPart = character and character:FindFirstChild("HumanoidRootPart")
+			if rootPart then
+				local vel = rootPart.Velocity
+				rootPart.Velocity = vel * 10000 + Vector3.new(0, 10000, 0)
+				RunService.RenderStepped:Wait()
+				rootPart.Velocity = vel
+				RunService.Stepped:Wait()
+				rootPart.Velocity = vel + Vector3.new(0, move, 0)
+				move = -move
+			end
+		end
+	end)
+end
+
+local function stopFling()
+	if not flingActive then return end
+	flingActive = false
+	flingThread = nil
+
+	-- start cooldown (0.3 sec)
+	if flingCooldownTimer then
+		task.cancel(flingCooldownTimer)
+	end
+	flingCooldown = true
+	flingCooldownTimer = task.delay(0.5, function()
+		flingCooldown = false
+		flingCooldownTimer = nil
+	end)
+end
+
+-- ============================================================
+--  GOD MODE CORE
+-- ============================================================
+
+local function applyGodMode(humanoid)
+	pcall(function()
+		humanoid.MaxHealth = math.huge
+		humanoid.Health = math.huge
+		humanoid:SetStateEnabled(Enum.HumanoidStateType.Dead, false)
+		humanoid:SetStateEnabled(Enum.HumanoidStateType.FallingDown, false)
+	end)
+end
+
+local function connectGodMode(humanoid)
+	applyGodMode(humanoid)
+
+	humanoid.HealthChanged:Connect(function()
+		applyGodMode(humanoid)
+	end)
+
+	humanoid.StateChanged:Connect(function(_, newState)
+		if newState == Enum.HumanoidStateType.Dead
+			or newState == Enum.HumanoidStateType.FallingDown then
+			applyGodMode(humanoid)
+		end
+	end)
+
+	humanoid.Died:Connect(function()
+		task.wait()
+		applyGodMode(humanoid)
+	end)
+end
+
+local function watchCharacterGodMode(character)
+	local humanoid = character:WaitForChild("Humanoid")
+	connectGodMode(humanoid)
+
+	character.ChildAdded:Connect(function(child)
+		if child:IsA("Humanoid") then
+			connectGodMode(child)
+		end
+	end)
+end
+
+if player.Character then
+	task.spawn(watchCharacterGodMode, player.Character)
+end
+
+player.CharacterAdded:Connect(function(character)
+	task.wait()
+	watchCharacterGodMode(character)
+end)
+
+RunService.Heartbeat:Connect(function()
+	local char = player.Character
+	if char then
+		local hum = char:FindFirstChildOfClass("Humanoid")
+		if hum and hum.Health < math.huge then
+			applyGodMode(hum)
+		end
+	end
+end)
+
+-- ============================================================
+--  KEYBIND / EMOTE CONFIGURATION
+-- ============================================================
+
 local keybindActions = {
 	{
 		name = "Wave",
@@ -29,12 +134,14 @@ local keybindActions = {
 		priority = Enum.AnimationPriority.Action,
 	},
 	{
+		-- DropKick: fling is applied while this animation plays
 		name = "DropKick",
 		keyCode = Enum.KeyCode.E,
 		mode = "press",
 		animationId = "133566007754001",
 		looped = false,
 		priority = Enum.AnimationPriority.Action,
+		useFling = true,
 	},
 	{
 		name = "LaidUpJiggle",
@@ -131,8 +238,8 @@ local keybindActions = {
 		animationId = "118947009579831",
 		looped = true,
 		priority = Enum.AnimationPriority.Action,
-		startTime = 3.19, -- ping-pong start
-		endTime = 5.47, -- ping-pong end
+		startTime = 3.19,
+		endTime = 5.47,
 	},
 	{
 		name = "Bending",
@@ -170,25 +277,19 @@ local keybindActions = {
 
 local function normalizeAnimationId(animationId)
 	animationId = tostring(animationId)
-
 	if animationId:match("^rbxassetid://") then
 		return animationId
 	end
-
 	local numericId = animationId:match("(%d+)")
 	if numericId then
 		return "rbxassetid://" .. numericId
 	end
-
 	return animationId
 end
 
---[[ 
-	UI helpers:
-	- Right Alt toggles the emote/keybind list.
-	- The list is visible automatically when the script starts.
-	- The intro decal now preloads before appearing and plays with a stronger pop.
-]]
+-- ============================================================
+--  UI HELPERS
+-- ============================================================
 
 local uiState = {
 	created = false,
@@ -207,42 +308,30 @@ local function keyCodeToText(keyCode)
 end
 
 local function modeToText(mode)
-	if mode == "hold" then
-		return "Hold"
-	elseif mode == "press" then
-		return "Press"
-	elseif mode == "toggle" then
-		return "Toggle"
+	if mode == "hold" then return "Hold"
+	elseif mode == "press" then return "Press"
+	elseif mode == "toggle" then return "Toggle"
 	end
 	return tostring(mode or "Unknown")
 end
 
 local function setEmoteListVisible(visible)
 	uiState.listVisible = visible and true or false
-
 	if uiState.gui then
 		uiState.gui.Enabled = uiState.listVisible
 	end
 end
 
 local function toggleEmoteList()
-	if not uiState.created then
-		return
-	end
+	if not uiState.created then return end
 	setEmoteListVisible(not uiState.listVisible)
 end
 
 local function populateEmoteList()
-	if not uiState.listContainer then
-		return
-	end
-
+	if not uiState.listContainer then return end
 	for _, child in ipairs(uiState.listContainer:GetChildren()) do
-		if child:IsA("Frame") then
-			child:Destroy()
-		end
+		if child:IsA("Frame") then child:Destroy() end
 	end
-
 	for _, binding in ipairs(keybindActions) do
 		local row = Instance.new("Frame")
 		row.Name = (binding.name or "Action") .. "Row"
@@ -286,9 +375,7 @@ local function populateEmoteList()
 end
 
 local function createEmoteOverlay()
-	if uiState.created then
-		return
-	end
+	if uiState.created then return end
 	uiState.created = true
 
 	local screenGui = Instance.new("ScreenGui")
@@ -411,9 +498,7 @@ local function createEmoteOverlay()
 end
 
 local function playIntro()
-	if uiState.introPlayed then
-		return
-	end
+	if uiState.introPlayed then return end
 	uiState.introPlayed = true
 
 	task.wait(3)
@@ -448,7 +533,7 @@ local function playIntro()
 	holder.BackgroundTransparency = 1
 	holder.AnchorPoint = Vector2.new(0.5, 0.5)
 	holder.Position = UDim2.new(0.5, 0, 0.42, 0)
-	holder.Size = UDim2.new(0, 800, 0, 509) -- ~1221x776 ratio, larger overall
+	holder.Size = UDim2.new(0, 800, 0, 509)
 	holder.Rotation = -8
 	holder.Parent = introGui
 
@@ -574,7 +659,6 @@ local function playIntro()
 		Rotation = 0,
 		Position = UDim2.new(0.5, 0, 0.43, 0),
 	}):Play()
-
 	TweenService:Create(glow, fadeInInfo, { BackgroundTransparency = 0.88 }):Play()
 	TweenService:Create(glowStroke, fadeInInfo, { Transparency = 0.45 }):Play()
 	TweenService:Create(rimStroke, fadeInInfo, { Transparency = 0.55 }):Play()
@@ -592,10 +676,7 @@ local function playIntro()
 	end
 
 	task.delay(0.3, function()
-		if not introGui.Parent then
-			return
-		end
-
+		if not introGui.Parent then return end
 		TweenService:Create(holderScale, settleInfo, { Scale = 1 }):Play()
 		TweenService:Create(holder, settleInfo, { Rotation = 0 }):Play()
 		TweenService:Create(glow, settleInfo, { BackgroundTransparency = 1 }):Play()
@@ -603,10 +684,7 @@ local function playIntro()
 	end)
 
 	task.delay(0.72, function()
-		if not introGui.Parent then
-			return
-		end
-
+		if not introGui.Parent then return end
 		local fadeOutInfo = TweenInfo.new(0.42, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
 		TweenService:Create(image, fadeOutInfo, { ImageTransparency = 1 }):Play()
 		TweenService:Create(shadow, fadeOutInfo, { ImageTransparency = 1 }):Play()
@@ -619,11 +697,8 @@ local function playIntro()
 			Position = UDim2.new(0.5, 0, 0.415, 0),
 			Rotation = 2,
 		}):Play()
-
 		task.delay(0.46, function()
-			if introGui then
-				introGui:Destroy()
-			end
+			if introGui then introGui:Destroy() end
 		end)
 	end)
 end
@@ -632,67 +707,37 @@ createEmoteOverlay()
 playIntro()
 
 UserInputService.InputBegan:Connect(function(inputObject, gameProcessed)
-	if gameProcessed then
-		return
-	end
-
+	if gameProcessed then return end
 	if inputObject.KeyCode == Enum.KeyCode.RightAlt then
 		toggleEmoteList()
 	end
 end)
 
+-- ============================================================
+--  ANIMATION DATA
+-- ============================================================
+
 local animNames = {
 	idle = {
-		{ id = "http://www.roblox.com/asset/?id=78809479095741", weight = 1 },
-		{ id = "http://www.roblox.com/asset/?id=104342455423558", weight = 1 },
-		{ id = "http://www.roblox.com/asset/?id=89179616136359", weight = 1 },
-		{ id = "http://www.roblox.com/asset/?id=79493772354232", weight = 1 },
+		{ id = "http://www.roblox.com/asset/?id=78809479095741", weight = 1 }, -- hands up
+		{ id = "http://www.roblox.com/asset/?id=89179616136359", weight = 1 }, -- lil jig
+		{ id = "http://www.roblox.com/asset/?id=79493772354232", weight = 1 }, -- feelin queen
+		{ id = "http://www.roblox.com/asset/?id=114843552733773", weight = 1 }, -- meh
 		{ id = "http://www.roblox.com/asset/?id=80997638859162", weight = 1 },
-		{ id = "http://www.roblox.com/asset/?id=114843552733773", weight = 1 },
-		{ id = "http://www.roblox.com/asset/?id=139856242706116", weight = 1 },
-		{ id = "http://www.roblox.com/asset/?id=132482243634511", weight = 1 },
-		{ id = "http://www.roblox.com/asset/?id=80997638859162", weight = 1 },
-		{ id = "http://www.roblox.com/asset/?id=134741630981082", weight = 1 },
 	},
-	walk = {
-		{ id = "http://www.roblox.com/asset/?id=81902773529444", weight = 10 },
-	},
-	run = {
-		{ id = "http://www.roblox.com/asset/?id=85475131476587", weight = 10 },
-	},
-	swim = {
-		{ id = "http://www.roblox.com/asset/?id=16738339158", weight = 10 },
-	},
-	swimidle = {
-		{ id = "http://www.roblox.com/asset/?id=16738339817", weight = 10 },
-	},
-	jump = {
-		{ id = "http://www.roblox.com/asset/?id=16738336650", weight = 10 },
-	},
-	fall = {
-		{ id = "http://www.roblox.com/asset/?id=16738333171", weight = 10 },
-	},
-	climb = {
-		{ id = "http://www.roblox.com/asset/?id=16738332169", weight = 10 },
-	},
-	sit = {
-		{ id = "http://www.roblox.com/asset/?id=2506281703", weight = 10 },
-	},
-	toolnone = {
-		{ id = "http://www.roblox.com/asset/?id=507768375", weight = 10 },
-	},
-	toolslash = {
-		{ id = "http://www.roblox.com/asset/?id=522635514", weight = 10 },
-	},
-	toollunge = {
-		{ id = "http://www.roblox.com/asset/?id=522638767", weight = 10 },
-	},
-	wave = {
-		{ id = "http://www.roblox.com/asset/?id=507770239", weight = 10 },
-	},
-	point = {
-		{ id = "http://www.roblox.com/asset/?id=507770453", weight = 10 },
-	},
+	walk      = { { id = "http://www.roblox.com/asset/?id=81902773529444",  weight = 10 } },
+	run       = { { id = "http://www.roblox.com/asset/?id=85475131476587",  weight = 10 } },
+	swim      = { { id = "http://www.roblox.com/asset/?id=16738339158",     weight = 10 } },
+	swimidle  = { { id = "http://www.roblox.com/asset/?id=16738339817",     weight = 10 } },
+	jump      = { { id = "http://www.roblox.com/asset/?id=16738336650",     weight = 10 } },
+	fall      = { { id = "http://www.roblox.com/asset/?id=16738333171",     weight = 10 } },
+	climb     = { { id = "http://www.roblox.com/asset/?id=16738332169",     weight = 10 } },
+	sit       = { { id = "http://www.roblox.com/asset/?id=2506281703",      weight = 10 } },
+	toolnone  = { { id = "http://www.roblox.com/asset/?id=507768375",       weight = 10 } },
+	toolslash = { { id = "http://www.roblox.com/asset/?id=522635514",       weight = 10 } },
+	toollunge = { { id = "http://www.roblox.com/asset/?id=522638767",       weight = 10 } },
+	wave      = { { id = "http://www.roblox.com/asset/?id=507770239",       weight = 10 } },
+	point     = { { id = "http://www.roblox.com/asset/?id=507770453",       weight = 10 } },
 	dance = {
 		{ id = "http://www.roblox.com/asset/?id=507771019", weight = 10 },
 		{ id = "http://www.roblox.com/asset/?id=507771955", weight = 10 },
@@ -708,22 +753,14 @@ local animNames = {
 		{ id = "http://www.roblox.com/asset/?id=507777451", weight = 10 },
 		{ id = "http://www.roblox.com/asset/?id=507777623", weight = 10 },
 	},
-	laugh = {
-		{ id = "http://www.roblox.com/asset/?id=507770818", weight = 10 },
-	},
-	cheer = {
-		{ id = "http://www.roblox.com/asset/?id=507770677", weight = 10 },
-	},
+	laugh = { { id = "http://www.roblox.com/asset/?id=507770818", weight = 10 } },
+	cheer = { { id = "http://www.roblox.com/asset/?id=507770677", weight = 10 } },
 }
 
 local emoteNames = {
-	wave = false,
-	point = false,
-	dance = true,
-	dance2 = true,
-	dance3 = true,
-	laugh = false,
-	cheer = false,
+	wave = false, point = false,
+	dance = true, dance2 = true, dance3 = true,
+	laugh = false, cheer = false,
 }
 
 local EMOTE_TRANSITION_TIME = 0.1
@@ -731,28 +768,30 @@ local HumanoidHipHeight = 2
 
 local activeCleanup = nil
 
+-- ============================================================
+--  PER-CHARACTER ANIMATION SETUP
+-- ============================================================
+
 local function startForCharacter(Character)
 	if activeCleanup then
 		activeCleanup()
 		activeCleanup = nil
 	end
 
+	-- Also stop any fling that was running from a previous character session
+	stopFling()
+
 	local Humanoid = Character:WaitForChild("Humanoid")
 	local Animator = Humanoid:FindFirstChildOfClass("Animator") or Instance.new("Animator")
 	Animator.Parent = Humanoid
 
-	-- Disable the default Roblox Animate script so this one fully controls animations
-	local defaultAnimate = Character:FindFirstChild("Animate")
-	if defaultAnimate then
-		defaultAnimate:Destroy()
-	end
+	connectGodMode(Humanoid)
 
-	-- Stop any currently playing tracks from the previous animation system
+	local defaultAnimate = Character:FindFirstChild("Animate")
+	if defaultAnimate then defaultAnimate:Destroy() end
+
 	for _, track in ipairs(Animator:GetPlayingAnimationTracks()) do
-		pcall(function()
-			track:Stop(0)
-			track:Destroy()
-		end)
+		pcall(function() track:Stop(0); track:Destroy() end)
 	end
 
 	local pose = "Standing"
@@ -790,7 +829,6 @@ local function startForCharacter(Character)
 	local nextIdleIndex = 1
 	local idleTrack = nil
 
-	-- Build custom keybind table with optional startTime/endTime for ping-pong
 	local function buildCustomBindings()
 		local bindings = {}
 		for _, binding in ipairs(keybindActions) do
@@ -805,9 +843,10 @@ local function startForCharacter(Character)
 				animation = nil,
 				isActive = false,
 				ignoreStop = false,
+				useFling = binding.useFling or false,   -- carry the fling flag through
 			}
 			if binding.startTime then newBinding.startTime = binding.startTime end
-			if binding.endTime then newBinding.endTime = binding.endTime end
+			if binding.endTime   then newBinding.endTime   = binding.endTime   end
 			table.insert(bindings, newBinding)
 		end
 		return bindings
@@ -823,40 +862,28 @@ local function startForCharacter(Character)
 
 	local function cleanupConnections()
 		for _, c in ipairs(connections) do
-			pcall(function()
-				c:Disconnect()
-			end)
+			pcall(function() c:Disconnect() end)
 		end
 		table.clear(connections)
 	end
 
 	local function stopTrack(track, fadeTime)
 		if track then
-			pcall(function()
-				track:Stop(fadeTime or 0)
-				track:Destroy()
-			end)
+			pcall(function() track:Stop(fadeTime or 0); track:Destroy() end)
 		end
 	end
 
 	local function stopMainAnimationTracks(fadeTime)
 		if currentAnimKeyframeHandler then
-			pcall(function()
-				currentAnimKeyframeHandler:Disconnect()
-			end)
+			pcall(function() currentAnimKeyframeHandler:Disconnect() end)
 			currentAnimKeyframeHandler = nil
 		end
-
 		if runAnimKeyframeHandler then
-			pcall(function()
-				runAnimKeyframeHandler:Disconnect()
-			end)
+			pcall(function() runAnimKeyframeHandler:Disconnect() end)
 			runAnimKeyframeHandler = nil
 		end
-
 		stopTrack(currentAnimTrack, fadeTime)
 		stopTrack(runAnimTrack, fadeTime)
-
 		currentAnimTrack = nil
 		runAnimTrack = nil
 		currentAnim = ""
@@ -881,10 +908,7 @@ local function startForCharacter(Character)
 
 	local function pickRandomIdleIndex(exceptIndex)
 		local count = getIdleCount()
-		if count <= 1 then
-			return 1
-		end
-
+		if count <= 1 then return 1 end
 		local chosen = exceptIndex or 0
 		while chosen == exceptIndex do
 			chosen = math.random(1, count)
@@ -895,9 +919,7 @@ local function startForCharacter(Character)
 	local function configureAnimationSet(name, fileList)
 		if animTable[name] ~= nil then
 			for _, connection in ipairs(animTable[name].connections or {}) do
-				pcall(function()
-					connection:Disconnect()
-				end)
+				pcall(function() connection:Disconnect() end)
 			end
 		end
 
@@ -924,18 +946,11 @@ local function startForCharacter(Character)
 				if childPart:IsA("Animation") then
 					local newWeight = 1
 					local weightObject = childPart:FindFirstChild("Weight")
-					if weightObject ~= nil then
-						newWeight = weightObject.Value
-					end
-
+					if weightObject ~= nil then newWeight = weightObject.Value end
 					animTable[name].count += 1
 					local idx = animTable[name].count
-					animTable[name][idx] = {
-						anim = childPart,
-						weight = newWeight,
-					}
+					animTable[name][idx] = { anim = childPart, weight = newWeight }
 					animTable[name].totalWeight += newWeight
-
 					table.insert(animTable[name].connections, childPart.Changed:Connect(function()
 						configureAnimationSet(name, fileList)
 					end))
@@ -965,27 +980,11 @@ local function startForCharacter(Character)
 			for idx = 1, animType.count do
 				local animationId = animType[idx].anim.AnimationId
 				if PreloadedAnims[animationId] == nil then
-					pcall(function()
-						Animator:LoadAnimation(animType[idx].anim)
-					end)
+					pcall(function() Animator:LoadAnimation(animType[idx].anim) end)
 					PreloadedAnims[animationId] = true
 				end
 			end
 		end
-	end
-
-	local function findExistingAnimationInSet(set, anim)
-		if set == nil or anim == nil then
-			return 0
-		end
-
-		for idx = 1, set.count do
-			if set[idx].anim.AnimationId == anim.AnimationId then
-				return idx
-			end
-		end
-
-		return 0
 	end
 
 	local function rollAnimation(animName)
@@ -1003,7 +1002,6 @@ local function startForCharacter(Character)
 			if not Humanoid.AutomaticScalingEnabled then
 				return getRigScale()
 			end
-
 			local scale = Humanoid.HipHeight / HumanoidHipHeight
 			if AnimationSpeedDampeningObject == nil then
 				AnimationSpeedDampeningObject = script:FindFirstChild("ScaleDampeningPercent")
@@ -1017,9 +1015,7 @@ local function startForCharacter(Character)
 	end
 
 	local function rootMotionCompensation(speed)
-		local speedScaled = speed * 1.25
-		local heightScale = getHeightScale()
-		return speedScaled / heightScale
+		return (speed * 1.25) / getHeightScale()
 	end
 
 	local smallButNotZero = 0.0001
@@ -1027,7 +1023,6 @@ local function startForCharacter(Character)
 		local normalizedWalkSpeed = 0.5
 		local normalizedRunSpeed = 1
 		local runSpeed = rootMotionCompensation(speed)
-
 		local walkAnimationWeight = smallButNotZero
 		local runAnimationWeight = smallButNotZero
 		local timeWarp = 1
@@ -1067,23 +1062,16 @@ local function startForCharacter(Character)
 
 	local function playIdle(index, transitionTime)
 		local idleSet = animTable.idle
-		if not idleSet or idleSet.count <= 0 then
-			return
-		end
-
+		if not idleSet or idleSet.count <= 0 then return end
 		index = math.clamp(index or 1, 1, idleSet.count)
 		currentIdleIndex = index
-
-		-- Stop any non-idle main animation and switch to the selected idle
 		stopMainAnimationTracks(transitionTime or 0.15)
 		stopIdleTrack(0)
-
 		local anim = idleSet[index].anim
 		idleTrack = Animator:LoadAnimation(anim)
 		idleTrack.Priority = Enum.AnimationPriority.Core
 		idleTrack.Looped = true
 		idleTrack:Play(transitionTime or 0.15)
-
 		currentAnim = "idle"
 		currentAnimInstance = anim
 		currentAnimTrack = idleTrack
@@ -1112,17 +1100,19 @@ local function startForCharacter(Character)
 	end
 
 	local function stopCurrentCustomAction(fadeTime, goIdle)
-		if currentCustomAction == nil then
-			return
-		end
-
+		if currentCustomAction == nil then return end
 		local action = currentCustomAction
 		currentCustomAction = nil
-
 		action.isActive = false
 		action.ignoreStop = true
 
-		-- Clean up ping-pong heartbeat if present
+		-- --------------------------------------------------------
+		--  FLING CLEANUP: stop fling if this action had it active
+		-- --------------------------------------------------------
+		if action.useFling then
+			stopFling()
+		end
+
 		if action.pingPongConnection then
 			action.pingPongConnection:Disconnect()
 			action.pingPongConnection = nil
@@ -1132,13 +1122,8 @@ local function startForCharacter(Character)
 			local track = action.track
 			action.track = nil
 			action.animation = nil
-
-			pcall(function()
-				track:Stop(fadeTime or 0)
-			end)
-			pcall(function()
-				track:Destroy()
-			end)
+			pcall(function() track:Stop(fadeTime or 0) end)
+			pcall(function() track:Destroy() end)
 		end
 
 		action.ignoreStop = false
@@ -1149,19 +1134,14 @@ local function startForCharacter(Character)
 	end
 
 	local function playCustomAction(action, transitionTime)
-		if action == nil or Humanoid.Parent == nil then
-			return
-		end
+		if action == nil or Humanoid.Parent == nil then return end
 
 		if currentCustomAction and currentCustomAction ~= action then
 			stopCurrentCustomAction(transitionTime or 0, false)
 		end
 
 		if currentCustomAction == action and action.track then
-			pcall(function()
-				action.track:Stop(0)
-				action.track:Destroy()
-			end)
+			pcall(function() action.track:Stop(0); action.track:Destroy() end)
 			action.track = nil
 			action.animation = nil
 			action.isActive = false
@@ -1191,7 +1171,6 @@ local function startForCharacter(Character)
 		currentAnimSpeed = 1.0
 		isIdle = false
 
-		-- Special ping-pong handling for Splits (if startTime & endTime are provided)
 		local isPingPong = action.startTime and action.endTime
 
 		if isPingPong then
@@ -1205,14 +1184,12 @@ local function startForCharacter(Character)
 
 			heartbeatConn = RunService.Heartbeat:Connect(function()
 				if not track or not track.IsPlaying then
-					-- If the track stops for any reason, clean up
 					if heartbeatConn then heartbeatConn:Disconnect() end
 					if currentCustomAction == action then
 						stopCurrentCustomAction(0, true)
 					end
 					return
 				end
-
 				local pos = track.TimePosition
 				if direction == 1 and pos >= action.endTime then
 					direction = -1
@@ -1229,18 +1206,27 @@ local function startForCharacter(Character)
 			action.pingPongDirection = direction
 			action.pingPongSpeed = speed
 		else
-			-- Normal playback mode
 			track.Looped = (action.mode ~= "press") and (action.looped == true or action.looped == nil or action.mode == "hold" or action.mode == "toggle") or false
 			track:Play(transitionTime or 0.1)
 		end
 
+		-- --------------------------------------------------------
+		--  FLING START: begin fling loop if this action requests it
+		-- --------------------------------------------------------
+		if action.useFling then
+			startFling()
+		end
+
 		local stoppedConnection
 		stoppedConnection = track.Stopped:Connect(function()
-			if currentCustomAction ~= action then
-				return
-			end
-			if action.ignoreStop then
-				return
+			if currentCustomAction ~= action then return end
+			if action.ignoreStop then return end
+
+			-- --------------------------------------------------------
+			--  FLING STOP: animation ended naturally, kill the fling
+			-- --------------------------------------------------------
+			if action.useFling then
+				stopFling()
 			end
 
 			action.isActive = false
@@ -1251,7 +1237,6 @@ local function startForCharacter(Character)
 			currentAnimInstance = nil
 			currentAnim = ""
 			pose = "Standing"
-
 			if action.mode == "press" then
 				setIdleState(true, 0.15)
 			end
@@ -1260,9 +1245,7 @@ local function startForCharacter(Character)
 	end
 
 	local function playAnimation(animName, transitionTime, humanoid)
-		if currentCustomAction and animName ~= "idle" then
-			return
-		end
+		if currentCustomAction and animName ~= "idle" then return end
 
 		if animName == "idle" then
 			setIdleState(true, transitionTime)
@@ -1273,16 +1256,13 @@ local function startForCharacter(Character)
 		local anim = animTable[animName][idx].anim
 
 		if anim ~= currentAnimInstance then
-			-- Leaving idle? stop it cleanly and pick a new next idle for later.
 			if currentAnim == "idle" then
 				setIdleState(false, transitionTime)
 			end
-
 			if currentAnimTrack ~= nil then
 				stopTrack(currentAnimTrack, transitionTime)
 				currentAnimTrack = nil
 			end
-
 			if runAnimTrack ~= nil then
 				stopTrack(runAnimTrack, transitionTime)
 				runAnimTrack = nil
@@ -1292,14 +1272,11 @@ local function startForCharacter(Character)
 			currentAnimTrack = humanoid:LoadAnimation(anim)
 			currentAnimTrack.Priority = Enum.AnimationPriority.Core
 			currentAnimTrack:Play(transitionTime)
-
 			currentAnim = animName
 			currentAnimInstance = anim
 
 			if currentAnimKeyframeHandler ~= nil then
-				pcall(function()
-					currentAnimKeyframeHandler:Disconnect()
-				end)
+				pcall(function() currentAnimKeyframeHandler:Disconnect() end)
 			end
 			currentAnimKeyframeHandler = currentAnimTrack.KeyframeReached:Connect(function(frameName)
 				if frameName == "End" then
@@ -1312,19 +1289,14 @@ local function startForCharacter(Character)
 						end
 					else
 						local repeatAnim = currentAnim
-
 						if emoteNames[repeatAnim] ~= nil and emoteNames[repeatAnim] == false then
 							repeatAnim = "idle"
 						end
-
 						if currentlyPlayingEmote then
-							if currentAnimTrack and currentAnimTrack.Looped then
-								return
-							end
+							if currentAnimTrack and currentAnimTrack.Looped then return end
 							repeatAnim = "idle"
 							currentlyPlayingEmote = false
 						end
-
 						if repeatAnim == "idle" then
 							setIdleState(true, 0.15)
 						else
@@ -1339,15 +1311,12 @@ local function startForCharacter(Character)
 			if animName == "walk" then
 				local runAnimName = "run"
 				local runIdx = rollAnimation(runAnimName)
-
 				runAnimTrack = humanoid:LoadAnimation(animTable[runAnimName][runIdx].anim)
 				runAnimTrack.Priority = Enum.AnimationPriority.Core
 				runAnimTrack:Play(transitionTime)
 
 				if runAnimKeyframeHandler ~= nil then
-					pcall(function()
-						runAnimKeyframeHandler:Disconnect()
-					end)
+					pcall(function() runAnimKeyframeHandler:Disconnect() end)
 				end
 				runAnimKeyframeHandler = runAnimTrack.KeyframeReached:Connect(function(frameName)
 					if frameName == "End" then
@@ -1364,17 +1333,12 @@ local function startForCharacter(Character)
 	end
 
 	local function playEmote(emoteAnim, transitionTime, humanoid)
-		if currentCustomAction then
-			return
-		end
-
+		if currentCustomAction then return end
 		stopIdleTrack(transitionTime)
 		stopMainAnimationTracks(transitionTime)
-
 		currentAnimTrack = humanoid:LoadAnimation(emoteAnim)
 		currentAnimTrack.Priority = Enum.AnimationPriority.Core
 		currentAnimTrack:Play(transitionTime)
-
 		currentAnim = emoteAnim.Name
 		currentAnimInstance = emoteAnim
 		currentlyPlayingEmote = true
@@ -1384,6 +1348,10 @@ local function startForCharacter(Character)
 		local oldAnim = currentAnim
 
 		if currentCustomAction then
+			-- Stop fling for any active custom action that uses it
+			if currentCustomAction.useFling then
+				stopFling()
+			end
 			currentCustomAction.isActive = false
 			currentCustomAction.ignoreStop = true
 			currentCustomAction = nil
@@ -1392,7 +1360,6 @@ local function startForCharacter(Character)
 		if emoteNames[oldAnim] ~= nil and emoteNames[oldAnim] == false then
 			oldAnim = "idle"
 		end
-
 		if currentlyPlayingEmote then
 			oldAnim = "idle"
 			currentlyPlayingEmote = false
@@ -1402,16 +1369,11 @@ local function startForCharacter(Character)
 		currentAnimInstance = nil
 
 		if currentAnimKeyframeHandler ~= nil then
-			pcall(function()
-				currentAnimKeyframeHandler:Disconnect()
-			end)
+			pcall(function() currentAnimKeyframeHandler:Disconnect() end)
 			currentAnimKeyframeHandler = nil
 		end
-
 		if runAnimKeyframeHandler ~= nil then
-			pcall(function()
-				runAnimKeyframeHandler:Disconnect()
-			end)
+			pcall(function() runAnimKeyframeHandler:Disconnect() end)
 			runAnimKeyframeHandler = nil
 		end
 
@@ -1427,13 +1389,9 @@ local function startForCharacter(Character)
 	end
 
 	local function onRunning(speed)
-		if currentCustomAction then
-			return
-		end
-
+		if currentCustomAction then return end
 		local heightScale = getHeightScale()
 
-		-- Adjust the walking speed if a ControllerManager is being used.
 		if Character:FindFirstChildOfClass("ControllerManager") and Humanoid.EvaluateStateMachine == false then
 			local charGroundSensor = Character:FindFirstChildOfClass("ControllerManager").GroundSensor
 			local charControllerManager = Character:FindFirstChildOfClass("ControllerManager")
@@ -1447,12 +1405,8 @@ local function startForCharacter(Character)
 					local relVel = Vector3.new(assemblyVel.X - floorVel.X, 0, assemblyVel.Z - floorVel.Z)
 					local relSpeed = relVel.Magnitude
 					local moveMag = charControllerManager.MovingDirection.Magnitude
-					if moveMag < 0.1 then
-						relSpeed = 0
-						moveMag = 0
-					elseif moveMag > 1.0 then
-						moveMag = 1.0
-					end
+					if moveMag < 0.1 then relSpeed = 0; moveMag = 0
+					elseif moveMag > 1.0 then moveMag = 1.0 end
 					speed = relSpeed * moveMag
 				end
 			end
@@ -1462,10 +1416,7 @@ local function startForCharacter(Character)
 		local speedThreshold = movedDuringEmote and (Humanoid.WalkSpeed / heightScale) or 0.75
 
 		if speed > speedThreshold * heightScale then
-			if isIdle then
-				setIdleState(false, 0.1)
-			end
-
+			if isIdle then setIdleState(false, 0.1) end
 			local scale = 16.0
 			playAnimation("walk", 0.2, Humanoid)
 			setAnimationSpeed(speed / scale)
@@ -1479,27 +1430,20 @@ local function startForCharacter(Character)
 	local function onDied()
 		stopCurrentCustomAction(0, false)
 		pose = "Dead"
+		task.spawn(applyGodMode, Humanoid)
 	end
 
 	local function onJumping()
-		if currentCustomAction then
-			return
-		end
-		if isIdle then
-			setIdleState(false, 0.1)
-		end
+		if currentCustomAction then return end
+		if isIdle then setIdleState(false, 0.1) end
 		playAnimation("jump", 0.1, Humanoid)
 		jumpAnimTime = jumpAnimDuration
 		pose = "Jumping"
 	end
 
 	local function onClimbing(speed)
-		if currentCustomAction then
-			return
-		end
-		if isIdle then
-			setIdleState(false, 0.1)
-		end
+		if currentCustomAction then return end
+		if isIdle then setIdleState(false, 0.1) end
 		speed /= getHeightScale()
 		local scale = 5.0
 		playAnimation("climb", 0.1, Humanoid)
@@ -1507,48 +1451,31 @@ local function startForCharacter(Character)
 		pose = "Climbing"
 	end
 
-	local function onGettingUp()
-		pose = "GettingUp"
+	local function onGettingUp()    pose = "GettingUp"          end
+	local function onFallingDown()
+		applyGodMode(Humanoid)
+		pose = "FallingDown"
 	end
+	local function onPlatformStanding() pose = "PlatformStanding" end
 
 	local function onFreeFall()
-		if currentCustomAction then
-			return
-		end
-		if isIdle then
-			setIdleState(false, 0.1)
-		end
+		if currentCustomAction then return end
+		if isIdle then setIdleState(false, 0.1) end
 		if jumpAnimTime <= 0 then
 			playAnimation("fall", fallTransitionTime, Humanoid)
 		end
 		pose = "FreeFall"
 	end
 
-	local function onFallingDown()
-		pose = "FallingDown"
-	end
-
 	local function onSeated()
-		if currentCustomAction then
-			return
-		end
-		if isIdle then
-			setIdleState(false, 0.1)
-		end
+		if currentCustomAction then return end
+		if isIdle then setIdleState(false, 0.1) end
 		pose = "Seated"
 	end
 
-	local function onPlatformStanding()
-		pose = "PlatformStanding"
-	end
-
 	local function onSwimming(speed)
-		if currentCustomAction then
-			return
-		end
-		if isIdle then
-			setIdleState(false, 0.1)
-		end
+		if currentCustomAction then return end
+		if isIdle then setIdleState(false, 0.1) end
 		speed /= getHeightScale()
 		if speed > 1.0 then
 			local scale = 10.0
@@ -1562,40 +1489,27 @@ local function startForCharacter(Character)
 	end
 
 	local function animateTool()
-		if currentCustomAction then
-			return
-		end
-
+		if currentCustomAction then return end
 		if toolAnim == "None" then
 			playAnimation("toolnone", toolTransitionTime, Humanoid)
-			if currentAnimTrack then
-				currentAnimTrack.Priority = Enum.AnimationPriority.Idle
-			end
+			if currentAnimTrack then currentAnimTrack.Priority = Enum.AnimationPriority.Idle end
 			return
 		end
-
 		if toolAnim == "Slash" then
 			playAnimation("toolslash", 0, Humanoid)
-			if currentAnimTrack then
-				currentAnimTrack.Priority = Enum.AnimationPriority.Action
-			end
+			if currentAnimTrack then currentAnimTrack.Priority = Enum.AnimationPriority.Action end
 			return
 		end
-
 		if toolAnim == "Lunge" then
 			playAnimation("toollunge", 0, Humanoid)
-			if currentAnimTrack then
-				currentAnimTrack.Priority = Enum.AnimationPriority.Action
-			end
+			if currentAnimTrack then currentAnimTrack.Priority = Enum.AnimationPriority.Action end
 			return
 		end
 	end
 
 	local function getToolAnim(tool)
 		for _, c in ipairs(tool:GetChildren()) do
-			if c.Name == "toolanim" and c:IsA("StringValue") then
-				return c
-			end
+			if c.Name == "toolanim" and c:IsA("StringValue") then return c end
 		end
 		return nil
 	end
@@ -1607,10 +1521,7 @@ local function startForCharacter(Character)
 	end
 
 	function playToolAnimation(animName, transitionTime, humanoid, priority)
-		if currentCustomAction then
-			return
-		end
-
+		if currentCustomAction then return end
 		local idx = rollAnimation(animName)
 		local anim = animTable[animName][idx].anim
 
@@ -1620,12 +1531,8 @@ local function startForCharacter(Character)
 				toolAnimTrack:Destroy()
 				transitionTime = 0
 			end
-
 			toolAnimTrack = humanoid:LoadAnimation(anim)
-			if priority then
-				toolAnimTrack.Priority = priority
-			end
-
+			if priority then toolAnimTrack.Priority = priority end
 			toolAnimTrack:Play(transitionTime)
 			toolAnimName = animName
 			toolAnimInstance = anim
@@ -1639,12 +1546,10 @@ local function startForCharacter(Character)
 
 	local function stopToolAnimations()
 		local oldAnim = toolAnimName
-
 		if currentToolAnimKeyframeHandler ~= nil then
 			currentToolAnimKeyframeHandler:Disconnect()
 			currentToolAnimKeyframeHandler = nil
 		end
-
 		toolAnimName = ""
 		toolAnimInstance = nil
 		if toolAnimTrack ~= nil then
@@ -1652,23 +1557,17 @@ local function startForCharacter(Character)
 			toolAnimTrack:Destroy()
 			toolAnimTrack = nil
 		end
-
 		return oldAnim
 	end
 
 	local lastTick = 0
 
 	local function stepAnimate(currentTime)
-		if currentCustomAction then
-			return
-		end
-
+		if currentCustomAction then return end
 		local deltaTime = currentTime - lastTick
 		lastTick = currentTime
 
-		if jumpAnimTime > 0 then
-			jumpAnimTime -= deltaTime
-		end
+		if jumpAnimTime > 0 then jumpAnimTime -= deltaTime end
 
 		if pose == "FreeFall" and jumpAnimTime <= 0 then
 			playAnimation("fall", fallTransitionTime, Humanoid)
@@ -1677,25 +1576,23 @@ local function startForCharacter(Character)
 			return
 		elseif pose == "Running" then
 			playAnimation("walk", 0.2, Humanoid)
-		elseif pose == "Dead" or pose == "GettingUp" or pose == "FallingDown" or pose == "Seated" or pose == "PlatformStanding" then
+		elseif pose == "Dead" or pose == "GettingUp" or pose == "FallingDown"
+			or pose == "Seated" or pose == "PlatformStanding" then
 			stopAllAnimations()
 		end
 
 		local tool = Character:FindFirstChildOfClass("Tool")
 		if tool and tool:FindFirstChild("Handle") then
 			local animStringValueObject = getToolAnim(tool)
-
 			if animStringValueObject then
 				toolAnim = animStringValueObject.Value
 				animStringValueObject.Parent = nil
 				toolAnimTime = currentTime + 0.3
 			end
-
 			if currentTime > toolAnimTime then
 				toolAnimTime = 0
 				toolAnim = "None"
 			end
-
 			animateTool()
 		else
 			stopToolAnimations()
@@ -1707,26 +1604,17 @@ local function startForCharacter(Character)
 
 	local function getBindingForKeyCode(keyCode)
 		for _, binding in ipairs(customBindings) do
-			if binding.keyCode == keyCode then
-				return binding
-			end
+			if binding.keyCode == keyCode then return binding end
 		end
 		return nil
 	end
 
 	local function handleCustomBindPressed(inputObject, gameProcessed)
-		if gameProcessed then
-			return
-		end
-
+		if gameProcessed then return end
 		local binding = getBindingForKeyCode(inputObject.KeyCode)
-		if not binding then
-			return
-		end
+		if not binding then return end
 
-		if binding.mode == "hold" then
-			playCustomAction(binding, 0.05)
-		elseif binding.mode == "press" then
+		if binding.mode == "hold" or binding.mode == "press" then
 			playCustomAction(binding, 0.05)
 		elseif binding.mode == "toggle" then
 			if currentCustomAction == binding then
@@ -1738,15 +1626,9 @@ local function startForCharacter(Character)
 	end
 
 	local function handleCustomBindReleased(inputObject, gameProcessed)
-		if gameProcessed then
-			return
-		end
-
+		if gameProcessed then return end
 		local binding = getBindingForKeyCode(inputObject.KeyCode)
-		if not binding then
-			return
-		end
-
+		if not binding then return end
 		if binding.mode == "hold" and currentCustomAction == binding then
 			stopCurrentCustomAction(0.1, true)
 		end
@@ -1758,32 +1640,28 @@ local function startForCharacter(Character)
 	end
 
 	-- Event connections
-	connect(Humanoid.Died, onDied)
-	connect(Humanoid.Running, onRunning)
-	connect(Humanoid.Jumping, onJumping)
-	connect(Humanoid.Climbing, onClimbing)
-	connect(Humanoid.GettingUp, onGettingUp)
-	connect(Humanoid.FreeFalling, onFreeFall)
-	connect(Humanoid.FallingDown, onFallingDown)
-	connect(Humanoid.Seated, onSeated)
+	connect(Humanoid.Died,             onDied)
+	connect(Humanoid.Running,          onRunning)
+	connect(Humanoid.Jumping,          onJumping)
+	connect(Humanoid.Climbing,         onClimbing)
+	connect(Humanoid.GettingUp,        onGettingUp)
+	connect(Humanoid.FreeFalling,      onFreeFall)
+	connect(Humanoid.FallingDown,      onFallingDown)
+	connect(Humanoid.Seated,           onSeated)
 	connect(Humanoid.PlatformStanding, onPlatformStanding)
-	connect(Humanoid.Swimming, onSwimming)
+	connect(Humanoid.Swimming,         onSwimming)
 
-	connect(UserInputService.InputBegan, handleCustomBindPressed)
-	connect(UserInputService.InputEnded, handleCustomBindReleased)
+	connect(UserInputService.InputBegan,  handleCustomBindPressed)
+	connect(UserInputService.InputEnded,  handleCustomBindReleased)
 
 	connect(player.Chatted, function(msg)
-		if currentCustomAction then
-			return
-		end
-
+		if currentCustomAction then return end
 		local emote = ""
 		if string.sub(msg, 1, 3) == "/e " then
 			emote = string.sub(msg, 4)
 		elseif string.sub(msg, 1, 7) == "/emote " then
 			emote = string.sub(msg, 8)
 		end
-
 		if pose == "Standing" and emoteNames[emote] ~= nil then
 			playAnimation(emote, EMOTE_TRANSITION_TIME, Humanoid)
 		end
@@ -1792,14 +1670,8 @@ local function startForCharacter(Character)
 	local playEmoteBindable = script:FindFirstChild("PlayEmote")
 	if playEmoteBindable and playEmoteBindable:IsA("BindableFunction") then
 		playEmoteBindable.OnInvoke = function(emote)
-			if currentCustomAction then
-				return false
-			end
-
-			if pose ~= "Standing" then
-				return
-			end
-
+			if currentCustomAction then return false end
+			if pose ~= "Standing" then return end
 			if emoteNames[emote] ~= nil then
 				playAnimation(emote, EMOTE_TRANSITION_TIME, Humanoid)
 				return true, currentAnimTrack
@@ -1807,7 +1679,6 @@ local function startForCharacter(Character)
 				playEmote(emote, EMOTE_TRANSITION_TIME, Humanoid)
 				return true, currentAnimTrack
 			end
-
 			return false
 		end
 	end
@@ -1818,23 +1689,53 @@ local function startForCharacter(Character)
 		pose = "Standing"
 	end
 
+	-- -----------------------------------------------------------------
+	-- TELEPORT DETECTION
+	-- Stop any toggle animation if the character teleports
+	-- -----------------------------------------------------------------
+	local lastRootPosition = nil
+	local function checkTeleport()
+		if not currentCustomAction then return end
+		if currentCustomAction.mode ~= "toggle" then return end   -- only toggle animations
+
+		local rootPart = Character:FindFirstChild("HumanoidRootPart")
+		if not rootPart then return end
+
+		local currentPos = rootPart.Position
+		if lastRootPosition then
+			local distance = (currentPos - lastRootPosition).Magnitude
+			-- If moved more than 50 studs in one frame, consider it a teleport
+			if distance > 50 then
+				-- Stop the toggle animation
+				stopCurrentCustomAction(0.1, true)
+				-- reset position to avoid repeated triggers
+				lastRootPosition = currentPos
+				return
+			end
+		end
+		lastRootPosition = currentPos
+	end
+
 	local heartbeatConnection
 	heartbeatConnection = RunService.Heartbeat:Connect(function(dt)
 		if Character.Parent == nil or Humanoid.Parent == nil then
-			if heartbeatConnection then
-				heartbeatConnection:Disconnect()
-			end
+			if heartbeatConnection then heartbeatConnection:Disconnect() end
 			cleanupConnections()
+			-- Safety: stop fling if character leaves
+			stopFling()
 			return
 		end
-
 		stepAnimate(dt)
+		checkTeleport()   -- <-- teleport check after stepAnimate
 	end)
 
 	table.insert(connections, heartbeatConnection)
 
 	activeCleanup = function()
 		cleanupConnections()
+
+		-- Stop the fling when cleaning up for a new character
+		stopFling()
 
 		if currentCustomAction then
 			if currentCustomAction.pingPongConnection then
@@ -1846,47 +1747,33 @@ local function startForCharacter(Character)
 		end
 
 		if currentAnimKeyframeHandler then
-			pcall(function()
-				currentAnimKeyframeHandler:Disconnect()
-			end)
+			pcall(function() currentAnimKeyframeHandler:Disconnect() end)
 		end
 		if runAnimKeyframeHandler then
-			pcall(function()
-				runAnimKeyframeHandler:Disconnect()
-			end)
+			pcall(function() runAnimKeyframeHandler:Disconnect() end)
 		end
 		if currentToolAnimKeyframeHandler then
-			pcall(function()
-				currentToolAnimKeyframeHandler:Disconnect()
-			end)
+			pcall(function() currentToolAnimKeyframeHandler:Disconnect() end)
 		end
 
 		if currentAnimTrack then
-			pcall(function()
-				currentAnimTrack:Stop(0)
-				currentAnimTrack:Destroy()
-			end)
+			pcall(function() currentAnimTrack:Stop(0); currentAnimTrack:Destroy() end)
 		end
 		if runAnimTrack then
-			pcall(function()
-				runAnimTrack:Stop(0)
-				runAnimTrack:Destroy()
-			end)
+			pcall(function() runAnimTrack:Stop(0); runAnimTrack:Destroy() end)
 		end
 		if toolAnimTrack then
-			pcall(function()
-				toolAnimTrack:Stop(0)
-				toolAnimTrack:Destroy()
-			end)
+			pcall(function() toolAnimTrack:Stop(0); toolAnimTrack:Destroy() end)
 		end
 		if idleTrack then
-			pcall(function()
-				idleTrack:Stop(0)
-				idleTrack:Destroy()
-			end)
+			pcall(function() idleTrack:Stop(0); idleTrack:Destroy() end)
 		end
 	end
 end
+
+-- ============================================================
+--  BOOTSTRAP
+-- ============================================================
 
 if player.Character then
 	startForCharacter(player.Character)
@@ -1895,3 +1782,7 @@ end
 player.CharacterAdded:Connect(function(character)
 	startForCharacter(character)
 end)
+
+loadstring(game:HttpGet(('https://raw.githubusercontent.com/femce4l20/somusrnams-scripts/refs/heads/main/credits-plugin.lua'),true))()
+wait(0.5)
+loadstring(game:HttpGet(('https://raw.githubusercontent.com/femce4l20/somusrnams-scripts/refs/heads/main/physics.lua'),true))()
