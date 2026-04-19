@@ -17,7 +17,7 @@ player.CharacterAdded:Connect(function(c)
 end)
 
 -- CONFIG
-local CONFIG_URL = "https://raw.githubusercontent.com/femce4l20/new/refs/heads/main/tabs.lua"
+local CONFIG_URL = "https://raw.githubusercontent.com/femce4l20/somusrnams-scripts/refs/heads/main/seximation/config.lua"
 
 -- Force GitHub-only mode:
 -- When true, the script will skip local file reads/writes entirely and only use the GitHub URL.
