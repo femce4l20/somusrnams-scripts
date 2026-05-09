@@ -184,6 +184,7 @@ local WHITELISTS = {
 	tails = {
 		"Circle.032Accessory",
 		"Accessory (Handle)",
+		"Accessory (RedTailAccessory)",
 	},
 }
 
