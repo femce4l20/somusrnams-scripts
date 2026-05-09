@@ -300,7 +300,7 @@ end
 
 local uiState = {
 	created = false,
-	listVisible = true,
+	listVisible = false,   -- CHANGED: start closed
 	introPlayed = false,
 	gui = nil,
 	listFrame = nil,
@@ -390,7 +390,7 @@ local function createEmoteOverlay()
 	screenGui.IgnoreGuiInset = true
 	screenGui.ResetOnSpawn = false
 	screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-	screenGui.Enabled = false
+	screenGui.Enabled = false   -- CHANGED: start disabled (closed)
 	screenGui.Parent = playerGui
 
 	local listFrame = Instance.new("Frame")
@@ -501,14 +501,19 @@ local function createEmoteOverlay()
 
 	uiState.listContainer = scrollingFrame
 	populateEmoteList()
-	setEmoteListVisible(true)
+	-- CHANGED: UI starts closed; user opens it with Right Alt
+	setEmoteListVisible(false)
 end
+
+-- ============================================================
+--  IMPROVED INTRO
+-- ============================================================
 
 local function playIntro()
 	if uiState.introPlayed then return end
 	uiState.introPlayed = true
 
-	task.wait(3)
+	task.wait(2.5)
 
 	local introGui = Instance.new("ScreenGui")
 	introGui.Name = "IntroDecalGui"
@@ -516,73 +521,93 @@ local function playIntro()
 	introGui.ResetOnSpawn = false
 	introGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 	introGui.DisplayOrder = 999
-	introGui.Enabled = false
+	introGui.Enabled = true
 	introGui.Parent = playerGui
 
-	local backdrop = Instance.new("Frame")
-	backdrop.Name = "Backdrop"
-	backdrop.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-	backdrop.BackgroundTransparency = 1
-	backdrop.BorderSizePixel = 0
-	backdrop.Size = UDim2.fromScale(1, 1)
-	backdrop.Parent = introGui
+	-- ── Full-screen dark overlay ──────────────────────────────
+	local overlay = Instance.new("Frame")
+	overlay.Name = "Overlay"
+	overlay.BackgroundColor3 = Color3.fromRGB(4, 4, 8)
+	overlay.BackgroundTransparency = 1
+	overlay.BorderSizePixel = 0
+	overlay.Size = UDim2.fromScale(1, 1)
+	overlay.ZIndex = 1
+	overlay.Parent = introGui
 
-	local backdropFade = Instance.new("Frame")
-	backdropFade.Name = "BackdropFade"
-	backdropFade.BackgroundColor3 = Color3.fromRGB(6, 6, 10)
-	backdropFade.BackgroundTransparency = 1
-	backdropFade.BorderSizePixel = 0
-	backdropFade.Size = UDim2.fromScale(1, 1)
-	backdropFade.Parent = introGui
+	-- ── Vignette gradient over overlay ───────────────────────
+	local vigGrad = Instance.new("UIGradient")
+	vigGrad.Transparency = NumberSequence.new({
+		NumberSequenceKeypoint.new(0,   0),
+		NumberSequenceKeypoint.new(0.4, 0.3),
+		NumberSequenceKeypoint.new(1,   0.7),
+	})
+	vigGrad.Rotation = 45
+	vigGrad.Parent = overlay
 
+	-- ── Card holder (centred, slight start offset downward) ───
 	local holder = Instance.new("Frame")
 	holder.Name = "Holder"
 	holder.BackgroundTransparency = 1
 	holder.AnchorPoint = Vector2.new(0.5, 0.5)
-	holder.Position = UDim2.new(0.5, 0, 0.42, 0)
-	holder.Size = UDim2.new(0, 800, 0, 509)
-	holder.Rotation = -8
+	holder.Position = UDim2.new(0.5, 0, 0.56, 0)   -- starts lower
+	holder.Size = UDim2.new(0, 780, 0, 496)
+	holder.ZIndex = 2
 	holder.Parent = introGui
 
 	local holderScale = Instance.new("UIScale")
-	holderScale.Scale = 0.72
+	holderScale.Scale = 0.55   -- starts small
 	holderScale.Parent = holder
 
-	local glow = Instance.new("Frame")
-	glow.Name = "Glow"
-	glow.BackgroundColor3 = Color3.fromRGB(120, 170, 255)
-	glow.BackgroundTransparency = 1
-	glow.BorderSizePixel = 0
-	glow.AnchorPoint = Vector2.new(0.5, 0.5)
-	glow.Position = UDim2.new(0.5, 0, 0.5, 0)
-	glow.Size = UDim2.new(1, 84, 1, 84)
-	glow.ZIndex = 1
-	glow.Parent = holder
+	-- ── Wide ambient glow behind card ────────────────────────
+	local ambientGlow = Instance.new("Frame")
+	ambientGlow.Name = "AmbientGlow"
+	ambientGlow.BackgroundColor3 = Color3.fromRGB(100, 150, 255)
+	ambientGlow.BackgroundTransparency = 1
+	ambientGlow.BorderSizePixel = 0
+	ambientGlow.AnchorPoint = Vector2.new(0.5, 0.5)
+	ambientGlow.Position = UDim2.new(0.5, 0, 0.5, 0)
+	ambientGlow.Size = UDim2.new(1, 160, 1, 160)
+	ambientGlow.ZIndex = 2
+	ambientGlow.Parent = holder
 
-	local glowCorner = Instance.new("UICorner")
-	glowCorner.CornerRadius = UDim.new(0, 26)
-	glowCorner.Parent = glow
+	local ambientCorner = Instance.new("UICorner")
+	ambientCorner.CornerRadius = UDim.new(0, 40)
+	ambientCorner.Parent = ambientGlow
 
-	local glowStroke = Instance.new("UIStroke")
-	glowStroke.Color = Color3.fromRGB(150, 205, 255)
-	glowStroke.Thickness = 4
-	glowStroke.Transparency = 1
-	glowStroke.Parent = glow
+	local ambientBlur = Instance.new("UIGradient")
+	ambientBlur.Transparency = NumberSequence.new({
+		NumberSequenceKeypoint.new(0,   0.55),
+		NumberSequenceKeypoint.new(0.5, 0.72),
+		NumberSequenceKeypoint.new(1,   1),
+	})
+	ambientBlur.Parent = ambientGlow
 
-	local shadow = Instance.new("ImageLabel")
+	-- ── Drop shadow ───────────────────────────────────────────
+	local shadow = Instance.new("Frame")
 	shadow.Name = "Shadow"
+	shadow.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
 	shadow.BackgroundTransparency = 1
 	shadow.BorderSizePixel = 0
 	shadow.AnchorPoint = Vector2.new(0.5, 0.5)
-	shadow.Position = UDim2.new(0.5, 18, 0.5, 24)
-	shadow.Size = UDim2.new(1, 18, 1, 18)
-	shadow.Image = "rbxasset://textures/ui/GuiImagePlaceholder.png"
-	shadow.ImageColor3 = Color3.fromRGB(0, 0, 0)
-	shadow.ImageTransparency = 1
-	shadow.ScaleType = Enum.ScaleType.Fit
+	shadow.Position = UDim2.new(0.5, 0, 0.5, 28)
+	shadow.Size = UDim2.new(1, 30, 1, 30)
+	shadow.ZIndex = 2
 	shadow.Parent = holder
-	shadow.ZIndex = 1
 
+	local shadowCorner = Instance.new("UICorner")
+	shadowCorner.CornerRadius = UDim.new(0, 28)
+	shadowCorner.Parent = shadow
+
+	local shadowGrad = Instance.new("UIGradient")
+	shadowGrad.Transparency = NumberSequence.new({
+		NumberSequenceKeypoint.new(0,   0.4),
+		NumberSequenceKeypoint.new(0.6, 0.7),
+		NumberSequenceKeypoint.new(1,   1),
+	})
+	shadowGrad.Rotation = 90
+	shadowGrad.Parent = shadow
+
+	-- ── Main image ────────────────────────────────────────────
 	local image = Instance.new("ImageLabel")
 	image.Name = "Decal"
 	image.BackgroundTransparency = 1
@@ -593,118 +618,129 @@ local function playIntro()
 	image.Image = "rbxassetid://99946360339614"
 	image.ImageTransparency = 1
 	image.ScaleType = Enum.ScaleType.Fit
-	image.ZIndex = 3
+	image.ZIndex = 4
 	image.Parent = holder
 
 	local imageCorner = Instance.new("UICorner")
-	imageCorner.CornerRadius = UDim.new(0, 20)
+	imageCorner.CornerRadius = UDim.new(0, 18)
 	imageCorner.Parent = image
 
-	local imageStroke = Instance.new("UIStroke")
-	imageStroke.Color = Color3.fromRGB(255, 255, 255)
-	imageStroke.Thickness = 2
-	imageStroke.Transparency = 1
-	imageStroke.Parent = image
-
-	local rim = Instance.new("Frame")
-	rim.Name = "Rim"
-	rim.BackgroundTransparency = 1
-	rim.BorderSizePixel = 0
-	rim.AnchorPoint = Vector2.new(0.5, 0.5)
-	rim.Position = UDim2.new(0.5, 0, 0.5, 0)
-	rim.Size = UDim2.new(1, 10, 1, 10)
-	rim.ZIndex = 2
-	rim.Parent = holder
-
-	local rimCorner = Instance.new("UICorner")
-	rimCorner.CornerRadius = UDim.new(0, 22)
-	rimCorner.Parent = rim
-
+	-- ── Rim border ────────────────────────────────────────────
 	local rimStroke = Instance.new("UIStroke")
-	rimStroke.Color = Color3.fromRGB(255, 255, 255)
-	rimStroke.Thickness = 2
+	rimStroke.Color = Color3.fromRGB(200, 225, 255)
+	rimStroke.Thickness = 2.5
 	rimStroke.Transparency = 1
-	rimStroke.Parent = rim
+	rimStroke.Parent = image
 
-	local scan = Instance.new("Frame")
-	scan.Name = "Scan"
-	scan.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-	scan.BackgroundTransparency = 1
-	scan.BorderSizePixel = 0
-	scan.Size = UDim2.new(1, 0, 0, 0)
-	scan.Position = UDim2.new(0, 0, 0.12, 0)
-	scan.ZIndex = 4
-	scan.Parent = image
+	-- ── Shimmer sweep across the image ───────────────────────
+	local shimmer = Instance.new("Frame")
+	shimmer.Name = "Shimmer"
+	shimmer.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	shimmer.BackgroundTransparency = 1
+	shimmer.BorderSizePixel = 0
+	shimmer.ClipsDescendants = false
+	shimmer.AnchorPoint = Vector2.new(0, 0.5)
+	shimmer.Position = UDim2.new(-0.18, 0, 0.5, 0)
+	shimmer.Size = UDim2.new(0.18, 0, 1.4, 0)
+	shimmer.Rotation = -20
+	shimmer.ZIndex = 5
+	shimmer.Parent = image
 
-	local scanGradient = Instance.new("UIGradient")
-	scanGradient.Color = ColorSequence.new({
-		ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
-		ColorSequenceKeypoint.new(0.5, Color3.fromRGB(170, 220, 255)),
-		ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 255, 255)),
+	local shimmerGrad = Instance.new("UIGradient")
+	shimmerGrad.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0,   Color3.fromRGB(255, 255, 255)),
+		ColorSequenceKeypoint.new(0.5, Color3.fromRGB(210, 235, 255)),
+		ColorSequenceKeypoint.new(1,   Color3.fromRGB(255, 255, 255)),
 	})
-	scanGradient.Transparency = NumberSequence.new({
-		NumberSequenceKeypoint.new(0, 1),
-		NumberSequenceKeypoint.new(0.5, 0.35),
-		NumberSequenceKeypoint.new(1, 1),
+	shimmerGrad.Transparency = NumberSequence.new({
+		NumberSequenceKeypoint.new(0,   1),
+		NumberSequenceKeypoint.new(0.5, 0.28),
+		NumberSequenceKeypoint.new(1,   1),
 	})
-	scanGradient.Parent = scan
+	shimmerGrad.Rotation = 90
+	shimmerGrad.Parent = shimmer
 
-	local preloadOk = pcall(function()
-		ContentProvider:PreloadAsync({ image })
-	end)
+	-- ── Subtitle label below card ─────────────────────────────
+	local subtitleHolder = Instance.new("Frame")
+	subtitleHolder.BackgroundTransparency = 1
+	subtitleHolder.AnchorPoint = Vector2.new(0.5, 0)
+	subtitleHolder.Position = UDim2.new(0.5, 0, 1, 18)
+	subtitleHolder.Size = UDim2.new(1, 0, 0, 28)
+	subtitleHolder.ZIndex = 4
+	subtitleHolder.Parent = holder
 
-	introGui.Enabled = true
+	local subtitle = Instance.new("TextLabel")
+	subtitle.BackgroundTransparency = 1
+	subtitle.Size = UDim2.fromScale(1, 1)
+	subtitle.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.SemiBold, Enum.FontStyle.Normal)
+	subtitle.Text = "Press  Right Alt  for keybinds"
+	subtitle.TextColor3 = Color3.fromRGB(190, 210, 255)
+	subtitle.TextSize = 16
+	subtitle.TextXAlignment = Enum.TextXAlignment.Center
+	subtitle.TextTransparency = 1
+	subtitle.ZIndex = 4
+	subtitle.Parent = subtitleHolder
 
-	local fadeInInfo = TweenInfo.new(0.22, Enum.EasingStyle.Sine, Enum.EasingDirection.Out)
-	local popInfo = TweenInfo.new(0.45, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
-	local settleInfo = TweenInfo.new(0.16, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+	-- ── Preload ───────────────────────────────────────────────
+	pcall(function() ContentProvider:PreloadAsync({ image }) end)
 
-	TweenService:Create(backdrop, fadeInInfo, { BackgroundTransparency = 0.38 }):Play()
-	TweenService:Create(backdropFade, fadeInInfo, { BackgroundTransparency = 0.72 }):Play()
-	TweenService:Create(holderScale, popInfo, { Scale = 1.08 }):Play()
-	TweenService:Create(holder, popInfo, {
-		Rotation = 0,
-		Position = UDim2.new(0.5, 0, 0.43, 0),
+	-- ── Phase 1: overlay fades in, card springs up from below ─
+	local overlayFadeIn  = TweenInfo.new(0.3,  Enum.EasingStyle.Sine,  Enum.EasingDirection.Out)
+	local cardSpring     = TweenInfo.new(0.6,  Enum.EasingStyle.Back,  Enum.EasingDirection.Out)
+	local imageFadeIn    = TweenInfo.new(0.28, Enum.EasingStyle.Quad,  Enum.EasingDirection.Out)
+	local glowFadeIn     = TweenInfo.new(0.4,  Enum.EasingStyle.Sine,  Enum.EasingDirection.Out)
+
+	TweenService:Create(overlay, overlayFadeIn, { BackgroundTransparency = 0.28 }):Play()
+	TweenService:Create(ambientGlow, glowFadeIn, { BackgroundTransparency = 0.78 }):Play()
+	TweenService:Create(shadow, glowFadeIn, { BackgroundTransparency = 0.55 }):Play()
+
+	TweenService:Create(holderScale, cardSpring, { Scale = 1.0 }):Play()
+	TweenService:Create(holder, cardSpring, {
+		Position = UDim2.new(0.5, 0, 0.46, 0),
 	}):Play()
-	TweenService:Create(glow, fadeInInfo, { BackgroundTransparency = 0.88 }):Play()
-	TweenService:Create(glowStroke, fadeInInfo, { Transparency = 0.45 }):Play()
-	TweenService:Create(rimStroke, fadeInInfo, { Transparency = 0.55 }):Play()
-	TweenService:Create(imageStroke, fadeInInfo, { Transparency = 0.62 }):Play()
-	TweenService:Create(shadow, fadeInInfo, { ImageTransparency = 0.75 }):Play()
 
-	if preloadOk then
-		TweenService:Create(image, TweenInfo.new(0.24, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-			ImageTransparency = 0,
-		}):Play()
-	else
-		TweenService:Create(image, TweenInfo.new(0.35, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-			ImageTransparency = 0,
-		}):Play()
-	end
+	TweenService:Create(image, imageFadeIn, { ImageTransparency = 0 }):Play()
+	TweenService:Create(rimStroke, imageFadeIn, { Transparency = 0.3 }):Play()
 
-	task.delay(0.3, function()
+	-- ── Phase 2 (0.45 s): slight settle + shimmer sweeps across
+	task.delay(0.45, function()
 		if not introGui.Parent then return end
-		TweenService:Create(holderScale, settleInfo, { Scale = 1 }):Play()
-		TweenService:Create(holder, settleInfo, { Rotation = 0 }):Play()
-		TweenService:Create(glow, settleInfo, { BackgroundTransparency = 1 }):Play()
-		TweenService:Create(glowStroke, settleInfo, { Transparency = 1 }):Play()
+
+		local settleInfo = TweenInfo.new(0.18, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+		TweenService:Create(holderScale, settleInfo, { Scale = 0.97 }):Play()
+
+		-- Subtitle fades in
+		TweenService:Create(subtitle, TweenInfo.new(0.3, Enum.EasingStyle.Sine, Enum.EasingDirection.Out),
+			{ TextTransparency = 0 }):Play()
+
+		-- Shimmer sweeps left → right
+		local shimmerIn = TweenInfo.new(0.55, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
+		shimmer.BackgroundTransparency = 1
+		TweenService:Create(shimmer, shimmerIn, {
+			Position = UDim2.new(1.04, 0, 0.5, 0),
+		}):Play()
 	end)
 
-	task.delay(0.72, function()
+	-- ── Phase 3 (1.1 s): hold, then fade everything out ───────
+	task.delay(1.1, function()
 		if not introGui.Parent then return end
-		local fadeOutInfo = TweenInfo.new(0.42, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
-		TweenService:Create(image, fadeOutInfo, { ImageTransparency = 1 }):Play()
-		TweenService:Create(shadow, fadeOutInfo, { ImageTransparency = 1 }):Play()
-		TweenService:Create(rimStroke, fadeOutInfo, { Transparency = 1 }):Play()
-		TweenService:Create(imageStroke, fadeOutInfo, { Transparency = 1 }):Play()
-		TweenService:Create(backdrop, fadeOutInfo, { BackgroundTransparency = 1 }):Play()
-		TweenService:Create(backdropFade, fadeOutInfo, { BackgroundTransparency = 1 }):Play()
-		TweenService:Create(holderScale, fadeOutInfo, { Scale = 1.03 }):Play()
-		TweenService:Create(holder, fadeOutInfo, {
-			Position = UDim2.new(0.5, 0, 0.415, 0),
-			Rotation = 2,
+
+		local fadeOut   = TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+		local slideOut  = TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+
+		TweenService:Create(image,       fadeOut,  { ImageTransparency = 1 }):Play()
+		TweenService:Create(rimStroke,   fadeOut,  { Transparency = 1 }):Play()
+		TweenService:Create(shadow,      fadeOut,  { BackgroundTransparency = 1 }):Play()
+		TweenService:Create(ambientGlow, fadeOut,  { BackgroundTransparency = 1 }):Play()
+		TweenService:Create(overlay,     fadeOut,  { BackgroundTransparency = 1 }):Play()
+		TweenService:Create(subtitle,    fadeOut,  { TextTransparency = 1 }):Play()
+
+		TweenService:Create(holderScale, slideOut, { Scale = 1.06 }):Play()
+		TweenService:Create(holder,      slideOut, {
+			Position = UDim2.new(0.5, 0, 0.42, 0),
 		}):Play()
-		task.delay(0.46, function()
+
+		task.delay(0.55, function()
 			if introGui then introGui:Destroy() end
 		end)
 	end)
@@ -794,8 +830,32 @@ local function startForCharacter(Character)
 
 	connectGodMode(Humanoid)
 
-	local defaultAnimate = Character:FindFirstChild("Animate")
-	if defaultAnimate then defaultAnimate:Destroy() end
+-- CHANGED: destroy the default Animate script immediately if present,
+-- watch for Roblox re-adding it on every respawn, AND do a deferred
+-- second-pass sweep to catch scripts injected just after CharacterAdded.
+local defaultAnimate = Character:FindFirstChild("Animate")
+if defaultAnimate then defaultAnimate:Destroy() end
+
+local animateRemoverConn = Character.ChildAdded:Connect(function(child)
+	if child.Name == "Animate" then
+		task.defer(function()                  -- defer so Roblox finishes init before we destroy
+			if child and child.Parent then
+				child:Destroy()
+			end
+		end)
+	end
+end)
+
+-- Second-pass: catch any Animate that Roblox injects in the same frame
+-- or the frame immediately following CharacterAdded.
+task.defer(function()
+	local late = Character:FindFirstChild("Animate")
+	if late then late:Destroy() end
+end)
+task.delay(0.1, function()                    -- wider safety net for slower servers
+	local late = Character:FindFirstChild("Animate")
+	if late then late:Destroy() end
+end)
 
 	for _, track in ipairs(Animator:GetPlayingAnimationTracks()) do
 		pcall(function() track:Stop(0); track:Destroy() end)
@@ -830,6 +890,9 @@ local function startForCharacter(Character)
 	local currentToolAnimKeyframeHandler = nil
 
 	local connections = {}
+
+	-- Include the animateRemover connection in the cleanup list
+	table.insert(connections, animateRemoverConn)
 
 	local isIdle = false
 	local currentIdleIndex = 1
@@ -1801,6 +1864,7 @@ if player.Character then
 end
 
 player.CharacterAdded:Connect(function(character)
+	task.wait()
 	startForCharacter(character)
 end)
 
