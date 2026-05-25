@@ -762,17 +762,13 @@ end)
 
 local animNames = {
 	idle = {
-		{ id = "http://www.roblox.com/asset/?id=78809479095741", weight = 1 }, -- hands up
+		{ id = "http://www.roblox.com/asset/?id=78809479095741", weight = 1 }, -- i dunno
 		{ id = "http://www.roblox.com/asset/?id=89179616136359", weight = 1 }, -- lil jig
 		{ id = "http://www.roblox.com/asset/?id=79493772354232", weight = 1 }, -- feelin queen
-		{ id = "http://www.roblox.com/asset/?id=114843552733773", weight = 1 }, -- meh
 		{ id = "http://www.roblox.com/asset/?id=80997638859162", weight = 1 },
 		{ id = "http://www.roblox.com/asset/?id=111583253223224", weight = 1 }, -- armswing
 		{ id = "http://www.roblox.com/asset/?id=125762909495100", weight = 1 }, -- baddies pic
-		{ id = "http://www.roblox.com/asset/?id=133594983635394", weight = 1 }, -- just bad
-		{ id = "http://www.roblox.com/asset/?id=72125134014221", weight = 1 },
-		{ id = "http://www.roblox.com/asset/?id=83930990919500", weight = 1 },
-		{ id = "http://www.roblox.com/asset/?id=106017220815159", weight = 1 },
+		{ id = "http://www.roblox.com/asset/?id=72125134014221", weight = 1 }, -- dazzling
 	},
 	walk      = { { id = "http://www.roblox.com/asset/?id=92302081394868",  weight = 10 } },
 	run       = { { id = "http://www.roblox.com/asset/?id=92302081394868",  weight = 10 } },
@@ -1094,6 +1090,8 @@ end)
 		return (speed * 1.25) / getHeightScale()
 	end
 
+	local movementAnimationSpeedBoost = 1.08 -- slightly faster walk/run animation playback
+
 	local smallButNotZero = 0.0001
 	local function setRunSpeed(speed)
 		local normalizedWalkSpeed = 0.5
@@ -1114,6 +1112,8 @@ end)
 			timeWarp = runSpeed / normalizedRunSpeed
 			runAnimationWeight = 1
 		end
+
+		timeWarp = timeWarp * movementAnimationSpeedBoost
 
 		if currentAnimTrack then
 			currentAnimTrack:AdjustWeight(walkAnimationWeight)
@@ -1875,5 +1875,3 @@ player.CharacterAdded:Connect(function(character)
 end)
 
 loadstring(game:HttpGet(('https://raw.githubusercontent.com/femce4l20/somusrnams-scripts/refs/heads/main/credits-plugin.lua'),true))()
-wait(0.5)
-loadstring(game:HttpGet(('https://raw.githubusercontent.com/femce4l20/somusrnams-scripts/refs/heads/main/physics/physics.lua'),true))()
