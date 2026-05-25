@@ -767,9 +767,15 @@ local animNames = {
 		{ id = "http://www.roblox.com/asset/?id=79493772354232", weight = 1 }, -- feelin queen
 		{ id = "http://www.roblox.com/asset/?id=114843552733773", weight = 1 }, -- meh
 		{ id = "http://www.roblox.com/asset/?id=80997638859162", weight = 1 },
+		{ id = "http://www.roblox.com/asset/?id=111583253223224", weight = 1 }, -- armswing
+		{ id = "http://www.roblox.com/asset/?id=125762909495100", weight = 1 }, -- baddies pic
+		{ id = "http://www.roblox.com/asset/?id=133594983635394", weight = 1 }, -- just bad
+		{ id = "http://www.roblox.com/asset/?id=72125134014221", weight = 1 },
+		{ id = "http://www.roblox.com/asset/?id=83930990919500", weight = 1 },
+		{ id = "http://www.roblox.com/asset/?id=106017220815159", weight = 1 },
 	},
-	walk      = { { id = "http://www.roblox.com/asset/?id=81902773529444",  weight = 10 } },
-	run       = { { id = "http://www.roblox.com/asset/?id=85475131476587",  weight = 10 } },
+	walk      = { { id = "http://www.roblox.com/asset/?id=92302081394868",  weight = 10 } },
+	run       = { { id = "http://www.roblox.com/asset/?id=92302081394868",  weight = 10 } },
 	swim      = { { id = "http://www.roblox.com/asset/?id=16738339158",     weight = 10 } },
 	swimidle  = { { id = "http://www.roblox.com/asset/?id=16738339817",     weight = 10 } },
 	jump      = { { id = "http://www.roblox.com/asset/?id=16738336650",     weight = 10 } },
