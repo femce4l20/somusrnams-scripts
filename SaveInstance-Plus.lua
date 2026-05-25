@@ -1,8 +1,9 @@
--- ============================================================
---  SaveInstance Plus - DM @cvtmvtt on discord if you come across any errors with-
---  my portion of thee additions (I can't modify synsaveinstance directly, I might-
---  be able to create work arounds for some things though)
--- ============================================================
+--[[
+	============================================================
+	SaveInstance Plus - DM @cvtmvtt on discord if you come across any errors with-
+	my portion of the additions
+	============================================================
+]]
 
 local Players           = game:GetService("Players")
 local RunService        = game:GetService("RunService")
@@ -16,12 +17,12 @@ local character   = player.Character or player.CharacterAdded:Wait()
 if not character.PrimaryPart then character:WaitForChild("HumanoidRootPart") end
 
 -- ============================================================
---  LOAD UniversalSynSaveInstance
+--  Load USSI
 -- ============================================================
 local synsaveinstance
 do
     local ok, result = pcall(function()
-        local base = "https://raw.githubusercontent.com/luau/UniversalSynSaveInstance/main/"
+        local base = "https://raw.githubusercontent.com/femce4l20/somusrnams-scripts/refs/heads/main/"
         return loadstring(game:HttpGet(base .. "saveinstance.luau", true), "saveinstance")()
     end)
     if not ok then
@@ -801,14 +802,14 @@ local function createMainUI()
     local toggles = {}
     toggles.Map              = createToggle(scroll, "💾", "Save Map",                             true,  1)
     toggles.UI               = createToggle(scroll, "🖥", "Save UI (PlayerGui / CoreGui)",         true,  2)
-    toggles.Scripts          = createToggle(scroll, "📜", "Save LocalScripts",                    true,  3)
-    toggles.SafeMode         = createToggle(scroll, "🛡", "SafeMode — Anti-Detection",             true,  4)
-    toggles.AntiIdle         = createToggle(scroll, "⏳", "Anti-Idle — Prevent AFK Kick",          true,  5)
-    toggles.Anon             = createToggle(scroll, "🕵", "Anonymous — Strip User Info",           false, 6)
-    toggles.Bytecode         = createToggle(scroll, "⚙", "Save Bytecode",                         false, 7)
-    toggles.StreamingBypass  = createToggle(scroll, "📡", "Disable StreamingEnabled on Run",       true,  8)
-    toggles.CameraSweep      = createToggle(scroll, "🎥", "Camera Sweep — Force Chunk Loading",    true,  9)
-    toggles.Experimental     = createToggle(scroll, "🧪", "Experimental — Char-Position Sweep",   false, 10, T.expAccent)
+    -- REMOVED: Scripts toggle (no longer needed; scripts/humanoids are ignored by default)
+    toggles.SafeMode         = createToggle(scroll, "🛡", "SafeMode — Anti-Detection",             true,  3)
+    toggles.AntiIdle         = createToggle(scroll, "⏳", "Anti-Idle — Prevent AFK Kick",          true,  4)
+    toggles.Anon             = createToggle(scroll, "🕵", "Anonymous — Strip User Info",           false, 5)
+    toggles.Bytecode         = createToggle(scroll, "⚙", "Save Bytecode",                         false, 6)
+    toggles.StreamingBypass  = createToggle(scroll, "📡", "Disable StreamingEnabled on Run (Fat chance)",       false,  7)
+    toggles.CameraSweep      = createToggle(scroll, "🎥", "Camera Sweep — Force Chunk Loading",    true,  8)
+    toggles.Experimental     = createToggle(scroll, "🧪", "Experimental — Char-Position Sweep",   true, 9, T.expAccent)
 
     -- Note under experimental toggle
     local expNote = Instance.new("TextLabel")
@@ -820,7 +821,7 @@ local function createMainUI()
     expNote.TextWrapped            = true
     expNote.Font                   = Enum.Font.Gotham
     expNote.TextSize               = 10
-    expNote.LayoutOrder            = 11
+    expNote.LayoutOrder            = 10   -- adjusted after removing Scripts toggle
     expNote.Parent                 = scroll
 
     list:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
@@ -881,9 +882,6 @@ local function buildOptions(toggles)
         table.insert(opts.IgnoreList, "PlayerGui")
         table.insert(opts.IgnoreList, "StarterGui")
         table.insert(opts.IgnoreList, "CoreGui")
-    end
-    if not toggles.Scripts.IsOn() then
-        opts.noscripts = true
     end
 
     if experimentalCacheFolder then
