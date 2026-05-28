@@ -1,53 +1,45 @@
 return {
   { name = "nsfw/m", animations = {
     { id = "131061459597861", name = "RunningManBang", pingpong = false },
-    { id = "83879434467976", name = "boing bottom", hipHeight = -0.2 },
-    { id = "72149474467473", name = "eat them out" },
-    { id = "107639100736436", name = "slow slide" },
-    { id = "116268945019667", name = "bang ur head" },
-
-
-
-    { id = "86745448648267", name = "OGGGGGGGGG", speed = 3 },
-    { id = "138802982118351", name = "Helicopter Swinging Hang Idle", speed = 5 },
     { id = "115812402435199", name = "lower torso bang" },
     { id = "78093637798125", name = "Watch it bounce", start = 1.5, finish = 8, hipHeight = -0.3 },
+    { id = "107639100736436", name = "slow slide" },
+    { id = "83879434467976", name = "boing bottom", hipHeight = -0.2 },
+    { id = "116268945019667", name = "bang ur head" },
     { id = "125136786273414", name = "die lit" },
+    { id = "86745448648267", name = "OGGGGGGGGG", speed = 3 },
     { id = "99637983789946", name = "Sus jig" },
+    { id = "138802982118351", name = "Helicopter Swinging Hang Idle", speed = 5 },
+    { id = "72149474467473", name = "eat them out" },
     { id = "119159386238767", name = "HEUGH HEUGH HEUGH", pingpong = true },
   } },
   { name = "nsfw/f", animations = {
-    -- splits
     { id = "88361934268015", name = "splits lay", pingpong = false },
     { id = "96018013254855", name = "split grind", start = 2.59, finish = 3, hipHeight = -1, pingpong = true, speed = 0.45 },
     { id = "90651744667158", name = "splits1", start = 2, finish = 2.7, pingpong = true },
-    { id = "85338230336633", name = "splits2", start = 1.45, finish = 1.64, pingpong = true, speed = 0.3 },
+    { id = "85338230336633", name = "split grind2", start = 1.45, finish = 1.64, pingpong = true, speed = 0.3 },
     { id = "127935496272883", name = "standing split fuck", start = 3, finish = 9.49, pingpong = true, speed = 2 },
-    { id = "73081825753534", name = "raised leg" },
-    -- shake
-    { id = "125763702777221", name = "shake and slap", start = 0.1, finish = 1.63, pingpong = true },
-    { id = "74073975404500", name = "huge jiggle" },
-    { id = "140041154137626", name = "jiggle show off" },
+    { id = "79162350150048", name = "leg lift", start = 0.99, finish = 1.55, pingpong = true, speed = 0.5 },
+    { id = "73081825753534", name = "raised leg1" },
+    { id = "125763702777221", name = "twerk on it!!1", start = 0.1, finish = 1.63, pingpong = true },
     { id = "140655897836448", name = "twerk on it!!2", start = 0.1, finish = 3.86, pingpong = true },
     { id = "140655897836448", name = "twerk on it!!3", start = 4.14, finish = 8.27, pingpong = true },
+    { id = "118896295981144", name = "twerk dance on it!!!!!4" },
     { id = "102703387164302", name = "against wall" },
     { id = "101174344563884", name = "sit jiggle1" },
     { id = "109716540429732", name = "sit jiggle2" },
+    { id = "74073975404500", name = "huge jiggle" },
     { id = "71919778527287", name = "cute twerk" },
+    { id = "140041154137626", name = "jiggle show off" },
     { id = "140655897836448", name = "jiggle 2step look back" },
-    -- sit/lay
     { id = "120446020975705", name = "sit on it" },
     { id = "138838702269764", name = "sit on it2" },
-    { id = "79162350150048", name = "leg lift", start = 0.99, finish = 1.55, pingpong = true, speed = 0.5 },
-    -- boingy boing
     { id = "103890015669349", name = "Push Me Up" },
     { id = "110715673109683", name = "bouncing on it", hipHeight = -1.5 },
     { id = "104244726102965", name = "riding crouch", start = 2.06, finish = 4.08, pingpong = true },
     { id = "71006078226830", name = "slamming", start = 1.3, finish = 2.55, pingpong = true },
     { id = "125854295284525", name = "bouncing on it2", pingpong = true },
     { id = "128918537135040", name = "drop it" },
-    { id = "118896295981144", name = "twerk dance on it!!!!!4" },
-    -- posture
     { id = "137291954460051", name = "bend 1", pingpong = true },
     { id = "134053180813311", name = "bend2", start = 2.5, finish = 8, pingpong = true },
     { id = "120247940955091", name = "bend3", start = 7.49, finish = 7.94, hipHeight = -0.5, pingpong = true, speed = 0.2 },
@@ -55,10 +47,8 @@ return {
     { id = "79120990250755", name = "bent over" },
     { id = "76966640370905", name = "slumpt", hipHeight = -1 },
     { id = "127688453098150", name = "pretty bend" },
-    -- on back
     { id = "134343193928632", name = "on back", start = 0.999, finish = 1, hipHeight = -0.5 },
     { id = "139855498172111", name = "legs up", hipHeight = -2 },
-    -- succ
     { id = "103065929051231", name = "succ1" },
     { id = "124873747842579", name = "succ2/?3sum?" },
     { id = "85478341360173", name = "succ3", start = 0.75, finish = 2.48, pingpong = true },
@@ -74,6 +64,8 @@ return {
     { id = "97870253257530", name = "succ13" },
     { id = "125965188125293", name = "handjob" },
     { id = "124575754112740", name = "Rub/Finger" },
+    { id = "rbxassetid://72157958389619", name = "slow twerking2" },
+    { id = "rbxassetid://90591611477372", name = "bend4" },
   } },
   { name = "social", animations = {
     { id = "85638447484999", name = "sit hug 1" },
@@ -103,6 +95,8 @@ return {
     { id = "114321134685629", name = "backlay" },
     { id = "rbxassetid://14352340648", name = "baby face" },
     { id = "rbxassetid://126264342780589", name = "punches" },
+    { id = "rbxassetid://76116602835017", name = "laid up7" },
+    { id = "rbxassetid://87023112827291", name = "laid up8" },
   } },
   { name = "dances", animations = {
     { id = "101385394794634", name = "Feeling pretty" },
@@ -141,5 +135,7 @@ return {
   { name = "poses", animations = {
     { id = "78370208598969", name = "showing off" },
     { id = "105338575027687", name = "backwave" },
+    { id = "rbxassetid://74685400180744", name = "feline tail idle" },
+    { id = "rbxassetid://108535995652736", name = "thumbs up behind" },
   } },
 }
