@@ -1,0 +1,48 @@
+local Plugin = {
+    ["PluginName"] = "somusrnams scripts",
+    ["PluginDescription"] = "Fuck you",
+    ["Commands"] = {
+        ["superbang"] = {
+            ["ListName"] = "superbang / bangplus / r15bang",
+            ["Description"] = "Bang in many ways",
+            ["Aliases"] = {"bangplus", "r15bang"},
+            ["Function"] = function(args, speaker)
+                loadstring(game:HttpGet("https://raw.githubusercontent.com/femce4l20/somusrnams-scripts/refs/heads/main/bang-plus-r15.lua"))()
+            end,
+        },
+        ["r15jerk"] = {
+            ["ListName"] = "r15jerk / betterjerk",
+            ["Description"] = "R15 jerk lol",
+            ["Aliases"] = {"betterjerk"},
+            ["Function"] = function(args, speaker)
+                loadstring(game:HttpGet("https://pastefy.app/YZoglOyJ/raw"))()
+            end,
+        },
+        ["seximation"] = {
+            ["ListName"] = "seximation",
+            ["Description"] = "Very cool sex animation GUI",
+            ["Aliases"] = {"animhub", "anim hub"},
+            ["Function"] = function(args, speaker)
+                loadstring(game:HttpGet("https://raw.githubusercontent.com/femce4l20/somusrnams-scripts/refs/heads/main/seximation/seximation.lua"))()
+            end,
+        },
+        ["hide"] = {
+            ["ListName"] = "hide / platform",
+            ["Description"] = "Teleport to a platform far away",
+            ["Aliases"] = {"platform"},
+            ["Function"] = function(args, speaker)
+                loadstring(game:HttpGet("https://raw.githubusercontent.com/femce4l20/somusrnams-scripts/refs/heads/main/hide.lua"))()
+            end,
+        },
+        ["saveinstance"] = {
+            ["ListName"] = "saveinstance plus",
+            ["Description"] = "best saveinstance additions",
+            ["Aliases"] = {"saveinstanceplus", "saveinstance", "saveplus", "saveinstance plus"},
+            ["Function"] = function(args, speaker)
+                loadstring(game:HttpGet("https://raw.githubusercontent.com/femce4l20/somusrnams-scripts/refs/heads/main/SaveInstance-Plus.lua"))()
+            end,
+        },
+    },
+}
+
+return Plugin
