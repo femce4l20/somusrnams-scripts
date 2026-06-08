@@ -11,45 +11,40 @@ local LocalPlayer = Players.LocalPlayer
 -- MODE CONFIG
 -- ============================================================
 local MODE_CONFIG = {
-	["Bang1"] = {
+	["BOG"] = {
 		animId = "rbxassetid://86745448648267",
 		offset = CFrame.new(0, 0, 1.1),
 		speed  = 10,
 	},
-	["Bang2"] = {
+	["B"] = {
 		animId = "rbxassetid://138802982118351",
 		offset = CFrame.new(0, 0, 1.1),
 		speed  = 2,
 	},
-	["EatingOut"] = {
+	["B backwards"] = {
+		animId = "rbxassetid://138802982118351",
+		offset = CFrame.new(0, 2, -1) * CFrame.Angles(0, math.rad(180), 0),
+		speed  = 2,
+	},
+	["Empty"] = {
+		animId = "rbxassetid://0",
+		offset = CFrame.new(0, 0, 1.1),
+		speed  = 10,
+	},
+	["Empty: Face"] = {
+		animId = "rbxassetid://0",
+		offset = CFrame.new(0, 2, -1) * CFrame.Angles(0, math.rad(180), 0),
+		speed  = 2,
+	},
+	["EatingBack"] = {
 		animId = "rbxassetid://72149474467473",
 		offset = CFrame.new(0, 0, 2),
 		speed  = 1,
 	},
-	["Fingering"] = {
+	["Fingers"] = {
 		animId = "rbxassetid://124575754112740",
 		offset = CFrame.new(-2, -1.6, 1.7),
 		speed  = 2.5,
-	},
-	["Exercising"] = {
-		animId = "rbxassetid://5918726674",      -- replace with exercising anim
-		offset = CFrame.new(0, 0, 1.2) * CFrame.Angles(0, math.rad(180), 0),
-		speed  = 4,
-	},
-	["Studying"] = {
-		animId = "rbxassetid://5918726674",      -- replace with studying anim
-		offset = CFrame.new(1.5, 0, 0) * CFrame.Angles(0, math.rad(-90), 0),
-		speed  = 1.5,
-	},
-	["Gaming"] = {
-		animId = "rbxassetid://5918726674",      -- replace with gaming anim
-		offset = CFrame.new(-1.1, 0, 0) * CFrame.Angles(0, math.rad(90), 0),
-		speed  = 2,
-	},
-	["Idle"] = {
-		animId = "rbxassetid://5918726674",      -- replace with idle anim
-		offset = CFrame.new(0, 0, 2.0),
-		speed  = 1,
 	},
 }
 
@@ -76,8 +71,7 @@ local PALETTE = {
 }
 
 local MODE_BUTTONS = {
-	"Bang1", "Bang2", "EatingOut", "Fingering",
-	"Exercising", "Studying", "Gaming", "Idle",
+	"BOG", "B", "B backwards", "Empty", "Empty: Face", "EatingBack", "Fingers",
 }
 
 -- ============================================================
@@ -990,5 +984,3 @@ task.defer(function()
 	MainFrame.Position = UDim2.new(orig.X.Scale, orig.X.Offset, orig.Y.Scale, orig.Y.Offset + 20)
 	tweenMed(MainFrame, { Position = orig })
 end)
-
-print("[ServerUI] Loaded successfully.")
