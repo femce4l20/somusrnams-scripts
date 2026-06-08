@@ -1,7 +1,11 @@
 --[[
 	============================================================
 	SaveInstance Plus - DM @cvtmvtt on discord if you come across any errors with-
-	my portion of the additions
+	my portion of the additions.
+
+	Tries to save more of the game by simply getting map bounds, and teleporting
+	around to get a bigger portion of the map loaded. Not a perfect fix
+	but its better than nothing!
 	============================================================
 ]]
 
@@ -22,7 +26,7 @@ if not character.PrimaryPart then character:WaitForChild("HumanoidRootPart") end
 local synsaveinstance
 do
     local ok, result = pcall(function()
-        local base = "https://raw.githubusercontent.com/femce4l20/somusrnams-scripts/refs/heads/main/"
+        local base = "https://raw.githubusercontent.com/femce4l20/somusrnams-scripts/refs/heads/main"
         return loadstring(game:HttpGet(base .. "saveinstance.luau", true), "saveinstance")()
     end)
     if not ok then
@@ -102,7 +106,7 @@ local function stopTeleportLoop()
 end
 
 -- ============================================================
---  STREAMING BYPASS
+--  STREAMING BYPASS (ts dont work)
 -- ============================================================
 local function bypassStreaming()
     local ok1 = pcall(function()
@@ -128,7 +132,7 @@ local function bypassStreaming()
 end
 
 -- ============================================================
---  MAP CAPTURE — CAMERA SWEEP
+--  MAP CAPTURE — CAMERA SWEEP (ts didnt work)
 -- ============================================================
 local function performCameraSweep(onComplete)
     print("[CameraSweep] Starting sweep to force chunk loading...")
@@ -802,7 +806,6 @@ local function createMainUI()
     local toggles = {}
     toggles.Map              = createToggle(scroll, "💾", "Save Map",                             true,  1)
     toggles.UI               = createToggle(scroll, "🖥", "Save UI (PlayerGui / CoreGui)",         true,  2)
-    -- REMOVED: Scripts toggle (no longer needed; scripts/humanoids are ignored by default)
     toggles.SafeMode         = createToggle(scroll, "🛡", "SafeMode — Anti-Detection",             true,  3)
     toggles.AntiIdle         = createToggle(scroll, "⏳", "Anti-Idle — Prevent AFK Kick",          true,  4)
     toggles.Anon             = createToggle(scroll, "🕵", "Anonymous — Strip User Info",           false, 5)
@@ -821,7 +824,7 @@ local function createMainUI()
     expNote.TextWrapped            = true
     expNote.Font                   = Enum.Font.Gotham
     expNote.TextSize               = 10
-    expNote.LayoutOrder            = 10   -- adjusted after removing Scripts toggle
+    expNote.LayoutOrder            = 10
     expNote.Parent                 = scroll
 
     list:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
