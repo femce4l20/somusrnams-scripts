@@ -1,48 +1,169 @@
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+
+local LocalPlayer = Players.LocalPlayer
+
+local SpeedBoost = 0
+local JumpBoost = 0
+
+local Humanoid
+local RootPart
+
+local function SetupCharacter(Character)
+	Humanoid = Character:WaitForChild("Humanoid")
+	RootPart = Character:WaitForChild("HumanoidRootPart")
+
+	Humanoid.StateChanged:Connect(function(_, NewState)
+		if NewState == Enum.HumanoidStateType.Jumping and JumpBoost > 0 then
+			local Vel = RootPart.AssemblyLinearVelocity
+
+			RootPart.AssemblyLinearVelocity = Vector3.new(
+				Vel.X,
+				Vel.Y + JumpBoost,
+				Vel.Z
+			)
+		end
+	end)
+end
+
+if LocalPlayer.Character then
+	SetupCharacter(LocalPlayer.Character)
+end
+
+LocalPlayer.CharacterAdded:Connect(SetupCharacter)
+
+RunService.RenderStepped:Connect(function()
+	if not Humanoid or not RootPart then
+		return
+	end
+
+	if SpeedBoost <= 0 then
+		return
+	end
+
+	local MoveDir = Humanoid.MoveDirection
+	if MoveDir.Magnitude <= 0 then
+		return
+	end
+
+	local Vel = RootPart.AssemblyLinearVelocity
+
+	RootPart.AssemblyLinearVelocity = Vector3.new(
+		MoveDir.X * (Humanoid.WalkSpeed + SpeedBoost),
+		Vel.Y,
+		MoveDir.Z * (Humanoid.WalkSpeed + SpeedBoost)
+	)
+end)
+
 local Plugin = {
-    ["PluginName"] = "somusrnams scripts",
-    ["PluginDescription"] = "Fuck you",
-    ["Commands"] = {
-        ["superbang"] = {
-            ["ListName"] = "superbang / bangplus / r15bang",
-            ["Description"] = "Bang in many ways",
-            ["Aliases"] = {"bangplus", "r15bang"},
-            ["Function"] = function(args, speaker)
-                loadstring(game:HttpGet("https://raw.githubusercontent.com/femce4l20/somusrnams-scripts/refs/heads/main/bang-plus-r15.lua"))()
-            end,
+	["PluginName"] = "somusrnams scripts",
+	["PluginDescription"] = "Fuck you",
+	["Commands"] = {
+		["superbang"] = {
+			["ListName"] = "superbang / bangplus / r15bang",
+			["Description"] = "Bang in many ways",
+			["Aliases"] = {"bangplus", "r15bang"},
+			["Function"] = function(args, speaker)
+				loadstring(game:HttpGet("https://raw.githubusercontent.com/femce4l20/somusrnams-scripts/refs/heads/main/bang-plus-r15.lua"))()
+			end,
+		},
+
+		["r15jerk"] = {
+			["ListName"] = "r15jerk / betterjerk",
+			["Description"] = "R15 jerk lol",
+			["Aliases"] = {"betterjerk"},
+			["Function"] = function(args, speaker)
+				loadstring(game:HttpGet("https://pastefy.app/YZoglOyJ/raw"))()
+			end,
+		},
+
+		["seximation"] = {
+			["ListName"] = "seximation",
+			["Description"] = "Very cool sex animation GUI",
+			["Aliases"] = {"animhub", "anim hub"},
+			["Function"] = function(args, speaker)
+				loadstring(game:HttpGet("https://raw.githubusercontent.com/femce4l20/somusrnams-scripts/refs/heads/main/seximation/seximation.lua"))()
+			end,
+		},
+
+		["hide"] = {
+			["ListName"] = "hide / platform",
+			["Description"] = "Teleport to a platform far away",
+			["Aliases"] = {"platform"},
+			["Function"] = function(args, speaker)
+				loadstring(game:HttpGet("https://raw.githubusercontent.com/femce4l20/somusrnams-scripts/refs/heads/main/hide.lua"))()
+			end,
+		},
+
+		["saveinstance"] = {
+			["ListName"] = "saveinstance plus",
+			["Description"] = "best saveinstance additions",
+			["Aliases"] = {"saveinstanceplus", "saveinstance", "saveplus", "saveinstance plus"},
+			["Function"] = function(args, speaker)
+				loadstring(game:HttpGet("https://raw.githubusercontent.com/femce4l20/somusrnams-scripts/refs/heads/main/SaveInstance-Plus.lua"))()
+			end,
+		},
+
+		["walkspeed2"] = {
+	        ["ListName"] = "walkspeed2",
+	        ["Description"] = "Velocity-based walkspeed",
+	        ["Aliases"] = {"ws2", "walkspeed2"},
+	        ["Function"] = function(args, speaker)
+	        	if not Humanoid then
+	        		return
+	        	end
+
+	        	local Amount = tonumber(args[1])
+
+	        	if Amount then
+	        		SpeedBoost = Amount
+	        	else
+	        		SpeedBoost = Humanoid.WalkSpeed
+	        	end
+	        end,
         },
-        ["r15jerk"] = {
-            ["ListName"] = "r15jerk / betterjerk",
-            ["Description"] = "R15 jerk lol",
-            ["Aliases"] = {"betterjerk"},
-            ["Function"] = function(args, speaker)
-                loadstring(game:HttpGet("https://pastefy.app/YZoglOyJ/raw"))()
-            end,
+
+		["jumppower2"] = {
+	        ["ListName"] = "jumppower2",
+	        ["Description"] = "Velocity-based jump power",
+	        ["Aliases"] = {"jp2", "jumppower2"},
+	        ["Function"] = function(args, speaker)
+	        	if not RootPart then
+	        		return
+	        	end
+
+	        	local Amount = tonumber(args[1])
+
+	        	if Amount then
+	        		JumpBoost = Amount
+	        	else
+	        		if Humanoid.UseJumpPower then
+	        			JumpBoost = Humanoid.JumpPower
+	        		else
+	        			JumpBoost = math.sqrt(2 * workspace.Gravity * Humanoid.JumpHeight)
+	        		end
+	        	end
+	        end,
         },
-        ["seximation"] = {
-            ["ListName"] = "seximation",
-            ["Description"] = "Very cool sex animation GUI",
-            ["Aliases"] = {"animhub", "anim hub"},
-            ["Function"] = function(args, speaker)
-                loadstring(game:HttpGet("https://raw.githubusercontent.com/femce4l20/somusrnams-scripts/refs/heads/main/seximation/seximation.lua"))()
-            end,
-        },
-        ["hide"] = {
-            ["ListName"] = "hide / platform",
-            ["Description"] = "Teleport to a platform far away",
-            ["Aliases"] = {"platform"},
-            ["Function"] = function(args, speaker)
-                loadstring(game:HttpGet("https://raw.githubusercontent.com/femce4l20/somusrnams-scripts/refs/heads/main/hide.lua"))()
-            end,
-        },
-        ["saveinstance"] = {
-            ["ListName"] = "saveinstance plus",
-            ["Description"] = "best saveinstance additions",
-            ["Aliases"] = {"saveinstanceplus", "saveinstance", "saveplus", "saveinstance plus"},
-            ["Function"] = function(args, speaker)
-                loadstring(game:HttpGet("https://raw.githubusercontent.com/femce4l20/somusrnams-scripts/refs/heads/main/SaveInstance-Plus.lua"))()
-            end,
-        },
-    },
+
+		["unwalkspeed2"] = {
+			["ListName"] = "unwalkspeed2",
+			["Description"] = "Disable velocity walkspeed",
+			["Aliases"] = {"unws2"},
+			["Function"] = function(args, speaker)
+				SpeedBoost = 0
+			end,
+		},
+
+		["unjumppower2"] = {
+			["ListName"] = "unjumppower2",
+			["Description"] = "Disable velocity jump power",
+			["Aliases"] = {"unjp2"},
+			["Function"] = function(args, speaker)
+				JumpBoost = 0
+			end,
+		},
+	},
 }
 
 return Plugin
